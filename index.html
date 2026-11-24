@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#0d1117">
-<title>SlipTrack — Auto Live Score Monitor</title>
+<title>SlipTrack — Auto Live Score & Settlement</title>
 <style>
 :root{
   --bg:#0d1117;
@@ -85,12 +85,14 @@ h1{font-size:24px;letter-spacing:-.03em;margin:3px 0}
 .ticket{background:#111720;border:1px solid var(--line);border-radius:11px;padding:13px 14px;cursor:pointer;transition:.15s}
 .ticket:hover,.ticket.selected{border-color:#64748b;background:#141c27}
 .ticket.selected{box-shadow:inset 3px 0 var(--red);border-color:#475569}
+.ticket.t-won{border-left:3px solid var(--green)}
+.ticket.t-lost{border-left:3px solid var(--red)}
 .row{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .ticket-id{font-size:13px;font-weight:800;letter-spacing:.01em}
 .odds{font-size:16px;font-weight:850;color:var(--yellow)}
 .meta{font-size:11px;color:var(--muted);margin-top:3px}
 
-/* Pills & Status Badges */
+/* Pills & Outcome Badges */
 .pills{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px;align-items:center}
 .pill{font-size:10px;font-weight:700;padding:3px 9px;border-radius:30px;background:#232d3b;color:#cbd5e1;display:inline-flex;align-items:center;gap:5px}
 .pill.live{background:#103320;color:#4ade80;border:1px solid #166534}
@@ -100,6 +102,12 @@ h1{font-size:24px;letter-spacing:-.03em;margin:3px 0}
 .pill.sport{background:#1e2430;color:#e2e8f0;border:1px solid #334155}
 .pill.score-box{background:#0f172a;color:#fff;border:1px solid #475569;font-size:11px;font-weight:800;letter-spacing:.03em}
 .pill.score-box.is-live{border-color:#22c55e;color:#4ade80;background:#0d2818}
+
+/* Win / Loss Settlement Badges */
+.pill.res-won,.pill.res-half_won{background:#123822;color:#4ade80;border:1px solid #22c55e;font-weight:800}
+.pill.res-lost,.pill.res-half_lost{background:#3b1419;color:#fca5a5;border:1px solid #ef4444;font-weight:800}
+.pill.res-push{background:#172a45;color:#7dd3fc;border:1px solid #38bdf8;font-weight:800}
+
 .dot{width:6px;height:6px;border-radius:50%;background:currentColor}
 .pill.live .dot{animation:pulse 1.4s infinite}
 @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.8)}}
@@ -183,10 +191,10 @@ tr:last-child td{border:0}
 <header class="top">
   <div class="brand">
     <div class="logo">S</div>
-    <div>SLIPTRACK<small>AUTO LIVE SCORE MONITOR</small></div>
+    <div>SLIPTRACK<small>AUTO LIVE & SETTLEMENT</small></div>
   </div>
   <div class="top-actions">
-    <div class="live-badge" id="autoBadge" title="Tự động cập nhật tỷ số mỗi 30 giây">
+    <div class="live-badge" id="autoBadge" title="Tự động cập nhật tỷ số và chấm kèo mỗi 30 giây">
       <span class="dot"></span>
       <span id="autoBadgeText">AUTO 30s</span>
     </div>
@@ -207,7 +215,7 @@ tr:last-child td{border:0}
       <button data-page="settings">⚙ &nbsp; Cài đặt</button>
     </nav>
     <div class="aside-note" id="syncStatusNote">
-      Đang bật tự động lấy tỷ số đa môn (gồm cả ATP Challenger & ITF) mỗi 30 giây.
+      Tự động cập nhật tỷ số đa môn và tự chốt kết quả Thắng / Thua mỗi 30 giây.
     </div>
   </aside>
 
@@ -218,16 +226,16 @@ tr:last-child td{border:0}
         <div>
           <div class="eyebrow">Overview</div>
           <h1>Tổng quan</h1>
-          <div class="sub">Tỷ số và trạng thái trận đấu tự động đồng bộ liên tục theo thời gian thực.</div>
+          <div class="sub">Tự động cập nhật tỷ số và chốt kết quả Thắng / Thua theo thời gian thực.</div>
         </div>
         <button class="btn primary" id="addDash">＋ Dán vé mới</button>
       </div>
 
       <div class="stats">
         <div class="stat"><label>Tổng vé</label><strong id="sTickets">0</strong></div>
-        <div class="stat"><label>Tổng trận</label><strong id="sMatches">0</strong></div>
         <div class="stat live-stat"><label>Đang diễn ra</label><strong id="sLive">0</strong></div>
-        <div class="stat"><label>Đã kết thúc</label><strong id="sDone">0</strong></div>
+        <div class="stat"><label>Vé thắng</label><strong id="sWon" style="color:var(--green)">0</strong></div>
+        <div class="stat"><label>Vé thua</label><strong id="sLost" style="color:var(--red)">0</strong></div>
       </div>
 
       <div class="grid">
@@ -249,7 +257,7 @@ tr:last-child td{border:0}
             <div class="quick">
               <button id="quickPaste">
                 <b>▤ &nbsp; Dán nguyên vé cược</b>
-                <small>Tự nhận diện môn (cả Tennis không ghi tên giải) và kéo tỷ số về</small>
+                <small>Tự tách kèo, kéo tỷ số về và tự động chốt Thắng / Thua</small>
               </button>
               <button id="quickManual">
                 <b>⌕ &nbsp; Theo dõi cặp đấu</b>
@@ -257,11 +265,11 @@ tr:last-child td{border:0}
               </button>
               <button data-goto="matches">
                 <b>◷ &nbsp; Bảng tỷ số trực tiếp</b>
-                <small>Xem tỷ số từng set, phút thi đấu và trạng thái tất cả các môn</small>
+                <small>Xem tỷ số từng set, tổng game/bàn và trạng thái các môn</small>
               </button>
             </div>
             <div class="notice info">
-              Hỗ trợ quét tự động cả giải lớn lẫn giải nhỏ: <b>ATP/WTA/Challenger/ITF</b>, Bóng đá các giải, Bóng rổ, Bóng chuyền, Bóng bàn (TT Cup/Setka), Cầu lông, NHL, NFL, MLB, UFC, Esports.
+              Khi trận <b>Đã kết thúc</b>, hệ thống tự tính tổng điểm/game/tỷ số để chốt <b>✓ THẮNG</b>, <b>✕ THUA</b> hoặc <b>= HÒA TIỀN</b> cho từng kèo và toàn bộ vé xiên.
             </div>
           </div>
         </div>
@@ -274,17 +282,19 @@ tr:last-child td{border:0}
         <div>
           <div class="eyebrow">Your Slips</div>
           <h1>Vé cược</h1>
-          <div class="sub">Tỷ số từng trận trong vé tự động nhảy khi trận diễn ra hoặc kết thúc.</div>
+          <div class="sub">Tự động cập nhật tỷ số và chốt kết quả thắng/thua từng kèo bên trong vé.</div>
         </div>
         <button class="btn primary" id="addTickets">＋ Thêm vé</button>
       </div>
 
       <div class="toolbar">
         <input class="field search" id="ticketSearch" placeholder="Tìm mã vé hoặc tên đội / tay vợt...">
-        <select class="field" id="ticketFilter" style="max-width:175px">
+        <select class="field" id="ticketFilter" style="max-width:185px">
           <option value="all">Tất cả vé</option>
           <option value="live">Đang có trận diễn ra</option>
           <option value="open">Chưa hoàn tất</option>
+          <option value="won">Vé thắng</option>
+          <option value="lost">Vé thua</option>
           <option value="done">Đã kết thúc</option>
         </select>
       </div>
@@ -302,7 +312,7 @@ tr:last-child td{border:0}
 
         <div class="panel">
           <div class="panel-head">
-            <b class="panel-title">Chi tiết vé</b>
+            <b class="panel-title">Chi tiết vé & Kết quả kèo</b>
           </div>
           <div class="panel-body" id="detail">
             <div class="empty">Chọn một vé bên trái để xem chi tiết.</div>
@@ -326,9 +336,9 @@ tr:last-child td{border:0}
         <input class="field search" id="matchSearch" placeholder="Tìm tên đội, tay vợt, giải đấu...">
         <select class="field" id="sportFilter" style="max-width:165px">
           <option value="all">Tất cả các môn</option>
+          <option value="Tennis">🎾 Tennis</option>
           <option value="Bóng đá">⚽ Bóng đá</option>
           <option value="Bóng rổ">🏀 Bóng rổ</option>
-          <option value="Tennis">🎾 Tennis</option>
           <option value="Bóng chuyền">🏐 Bóng chuyền</option>
           <option value="Bóng bàn">🏓 Bóng bàn</option>
           <option value="Cầu lông">🏸 Cầu lông</option>
@@ -375,7 +385,7 @@ tr:last-child td{border:0}
         <div>
           <div class="eyebrow">Archive</div>
           <h1>Lịch sử</h1>
-          <div class="sub">Các vé có toàn bộ trận đấu đã kết thúc.</div>
+          <div class="sub">Các vé đã ngã ngũ (Thắng, Thua hoặc đã kết thúc toàn bộ trận).</div>
         </div>
       </div>
       <div class="panel">
@@ -428,14 +438,14 @@ tr:last-child td{border:0}
               <button class="btn primary" id="saveProxy">Lưu cấu hình</button>
             </div>
             <div class="notice info">
-              App tự động gộp dữ liệu từ <b>365Scores + ESPN + TheSportsDB</b> (không cần API key), bao phủ cả <b>ATP Challenger, ITF, Bóng bàn, Bóng chuyền, Cầu lông, Bóng đá, Bóng rổ, Esports</b>.
+              App tự động gộp dữ liệu từ <b>365Scores + ESPN + TheSportsDB</b> (không cần API key), bao phủ cả <b>ATP Challenger, ITF, Bóng bàn, Bóng chuyền, Cầu lông, Bóng đá, Bóng rổ, Esports</b> và tự chấm kết quả ngay khi kết thúc trận.
             </div>
           </div>
         </div>
       </div>
     </section>
 
-    <div class="footer">SLIPTRACK · AUTO MULTI-SPORT LIVE MONITOR</div>
+    <div class="footer">SLIPTRACK · AUTO LIVE SCORE & SETTLEMENT</div>
   </main>
 </div>
 
@@ -453,7 +463,7 @@ tr:last-child td{border:0}
     <div class="modal-head">
       <div>
         <b>Thêm dữ liệu theo dõi tự động</b>
-        <div class="muted">Dán vé cược hoặc nhập tên cặp đấu — tỷ số sẽ tự động cập nhật</div>
+        <div class="muted">Dán vé cược hoặc nhập tên cặp đấu — tỷ số & kết quả sẽ tự động cập nhật</div>
       </div>
       <button class="btn btn-sm" data-close>✕</button>
     </div>
@@ -465,16 +475,16 @@ tr:last-child td{border:0}
 
       <div id="pastePane" style="margin-top:15px">
         <label class="muted" style="display:block;margin-bottom:6px">Nội dung vé cược</label>
-        <textarea id="raw" placeholder="Dán toàn bộ nội dung vé cược vào đây...&#10;&#10;Ví dụ:&#10;Max Alcala Gurri -vs- Gonzalo Villanueva&#10;Tài 20.5 @1.72&#10;&#10;Andrey Chepelev -vs- Eduardo Ribeiro&#10;Tài 20.5 @1.76"></textarea>
-        <p class="muted">Tự động phân biệt Tennis, Bóng đá, Bóng rổ, Bóng bàn... kể cả khi vé không ghi tên giải đấu.</p>
+        <textarea id="raw" placeholder="Dán toàn bộ nội dung vé cược vào đây...&#10;&#10;Ví dụ:&#10;Lucia Bronzetti -vs- Alicia Herrero Linana&#10;Tài 20.5 @1.85"></textarea>
+        <p class="muted">Tự động phân biệt môn, kéo tỷ số về và tự chốt <b>Thắng / Thua / Hòa tiền</b> khi trận kết thúc.</p>
         <button class="btn primary" id="parse">Phân tích vé</button>
         <div id="preview"></div>
       </div>
 
       <div id="manualPane" style="display:none;margin-top:15px">
         <div class="formgrid">
-          <div><label>Đội 1 / Tay vợt 1 *</label><input class="field" id="home" placeholder="VD: Max Alcala Gurri"></div>
-          <div><label>Đội 2 / Tay vợt 2 *</label><input class="field" id="away" placeholder="VD: Gonzalo Villanueva"></div>
+          <div><label>Đội 1 / Tay vợt 1 *</label><input class="field" id="home" placeholder="VD: Lucia Bronzetti"></div>
+          <div><label>Đội 2 / Tay vợt 2 *</label><input class="field" id="away" placeholder="VD: Alicia Herrero Linana"></div>
           <div>
             <label>Môn thể thao</label>
             <select class="field" id="sport">
@@ -677,7 +687,7 @@ tr:last-child td{border:0}
     $('#editModal').classList.remove('open');
   }
 
-  /* Smart Sport Detection (Handles Slips Without Tournament Headers) */
+  /* Smart Sport Detection */
   const CLUB_KEYWORDS = /\b(fc|cf|sc|ac|fk|sk|afc|bc|club|team|united|city|real|sporting|atletico|deportivo|inter|dynamo|spartak|lokomotiv|cska|zenit|ajax|psv|feyenoord|benfica|porto|celtic|rangers|arsenal|chelsea|liverpool|everton|villa|albion|rovers|wanderers|hotspur|palace|forest|county|town|borussia|bayern|eintracht|werder|fortuna|hertha|union|olympique|racing|stade|juventus|milan|napoli|roma|lazio|atalanta|fiorentina|torino|bologna|udinese|genoa|parma|como|venezia|cagliari|empoli|lecce|monza|verona|sevilla|valencia|villarreal|betis|sociedad|osasuna|getafe|celta|mallorca|alaves|girona|rayo|espanyol|leganes|valladolid|las palmas|u19|u20|u21|u23|women|reserves)\b/;
 
   function looksLikePersonPair(home, away) {
@@ -704,7 +714,6 @@ tr:last-child td{border:0}
     if (/\b(ufc|mma|boxing|quyen anh|bellator|one championship)\b/.test(t)) return 'MMA / Võ thuật';
     if (/\b(esports|lol|league of legends|dota|cs2|csgo|valorant|lck|lpl|esoccer|e soccer)\b/.test(t)) return 'Esports';
 
-    // Smart heuristic: Over/Under line 15.5–42.5 without corners/cards + 2 person names => Tennis
     const ouMatch = text.match(/(?:tài|xỉu|trên|dưới|over|under)\s*[+-]?\s*(\d{1,3}(?:\.\d+)?)/i);
     const ouVal = ouMatch ? parseFloat(ouMatch[1]) : NaN;
     const isCornerOrCard = /corner|phạt góc|thẻ|card/i.test(text);
@@ -715,12 +724,10 @@ tr:last-child td{border:0}
     return 'Bóng đá';
   }
 
-  /* Auto-fix existing saved matches that were misclassified as Football */
   function migrateExistingMatches() {
     let changed = false;
     db.matches.forEach(m => {
       if (m.sport === 'Bóng đá' && !m.league && looksLikePersonPair(m.home, m.away)) {
-        // Check linked ticket pick for Tennis game totals (15.5 - 42.5)
         const linkedPick = db.tickets
           .flatMap(t => t.entries)
           .find(e => matchKey(e) === matchKey(m));
@@ -836,6 +843,202 @@ tr:last-child td{border:0}
     return { id, odds, stake, mode, entries };
   }
 
+  /* =========================================================
+     AUTO SETTLEMENT / BET GRADING ENGINE (THẮNG / THUA / HÒA)
+     ========================================================= */
+  function parseScoreBreakdown(scoreStr) {
+    if (!scoreStr) return null;
+    const parts = String(scoreStr).split(',').map(p => p.trim()).filter(Boolean);
+    if (!parts.length) return null;
+
+    const pairs = [];
+    for (const p of parts) {
+      const m = p.match(/^(\d+)(?:\(\d+\))?\s*[-:]\s*(\d+)(?:\(\d+\))?$/);
+      if (m) pairs.push([parseInt(m[1], 10), parseInt(m[2], 10)]);
+    }
+    if (!pairs.length) return null;
+
+    let homeSum = 0;
+    let awaySum = 0;
+    let homeSets = 0;
+    let awaySets = 0;
+
+    pairs.forEach(([h, a]) => {
+      homeSum += h;
+      awaySum += a;
+      if (h > a) homeSets++;
+      else if (a > h) awaySets++;
+    });
+
+    return {
+      isMultiSet: pairs.length > 1,
+      homeSum,
+      awaySum,
+      totalSum: homeSum + awaySum,
+      homeSets,
+      awaySets,
+      totalSets: pairs.length
+    };
+  }
+
+  function parseAsianLine(rawStr) {
+    if (!rawStr) return NaN;
+    const splitMatch = String(rawStr).match(/([+-]?\d+(?:\.\d+)?)\s*\/\s*([+-]?\d+(?:\.\d+)?)/);
+    if (splitMatch) {
+      const a = parseFloat(splitMatch[1]);
+      let b = parseFloat(splitMatch[2]);
+      if (a < 0 && b > 0) b = -b;
+      return (a + b) / 2;
+    }
+    const numMatch = String(rawStr).match(/([+-]?\d+(?:\.\d+)?)/);
+    return numMatch ? parseFloat(numMatch[1]) : NaN;
+  }
+
+  function diffToOutcome(diff) {
+    if (diff >= 0.5) return 'won';
+    if (diff > 0) return 'half_won';
+    if (diff === 0) return 'push';
+    if (diff > -0.5) return 'half_lost';
+    return 'lost';
+  }
+
+  const OUTCOME_META = {
+    won: { label: '✓ THẮNG', mult: o => o },
+    half_won: { label: '✓ THẮNG NỬA', mult: o => 1 + (o - 1) / 2 },
+    push: { label: '= HÒA TIỀN', mult: () => 1 },
+    half_lost: { label: '− THUA NỬA', mult: () => 0.5 },
+    lost: { label: '✕ THUA', mult: () => 0 }
+  };
+
+  function gradeEntry(entry, match) {
+    const parsed = parseScoreBreakdown(match.score);
+    if (!parsed) return { outcome: null, liveStat: '' };
+
+    const sp = match.sport || entry.sport || 'Bóng đá';
+    const isSetSport = ['Tennis', 'Bóng chuyền', 'Bóng bàn', 'Cầu lông'].includes(sp);
+    const pickRaw = String(entry.pick || '').trim();
+    const pickNorm = norm(pickRaw);
+    const marketNorm = norm(`${entry.market || ''} ${pickRaw}`);
+
+    // Live stat helper (e.g., total games or goals so far)
+    const unitLabel = sp === 'Tennis' ? 'game' : sp === 'Bóng rổ' ? 'điểm' : isSetSport ? 'điểm' : 'bàn';
+    const liveStat = `Tổng: ${parsed.totalSum} ${unitLabel}`;
+
+    if (match.status !== 'finished') {
+      return { outcome: null, liveStat };
+    }
+
+    // Ignore corner/card markets since scoreboard only provides match goals/games
+    if (/corner|phat goc|the|card/.test(marketNorm)) {
+      return { outcome: null, liveStat };
+    }
+
+    // 1. Over / Under (Tài / Xỉu)
+    const isOver = /\b(tai|tren|over|o)\b/.test(pickNorm);
+    const isUnder = /\b(xiu|duoi|under|u)\b/.test(pickNorm);
+    if (isOver || isUnder || /tai xiu|over under/.test(marketNorm)) {
+      const afterKeyword = pickRaw.match(/(?:tài|xỉu|trên|dưới|over|under)\s*([+-]?\d+(?:\.\d+)?(?:\s*\/\s*\d+(?:\.\d+)?)?)/i);
+      const line = Math.abs(parseAsianLine(afterKeyword ? afterKeyword[1] : (entry.handicap || pickRaw)));
+      if (!isNaN(line) && (isOver || isUnder)) {
+        const actualTotal = (isSetSport && parsed.isMultiSet && line < 6) ? parsed.totalSets : parsed.totalSum;
+        const diff = isOver ? (actualTotal - line) : (line - actualTotal);
+        return { outcome: diffToOutcome(diff), liveStat };
+      }
+    }
+
+    // 2. Handicap (Cược chấp)
+    const hdpMatch = pickRaw.match(/([+-]\d+(?:\.\d+)?(?:\s*\/\s*[+-]?\d+(?:\.\d+)?)?)/);
+    if (/cuoc chap|handicap|hdp/.test(marketNorm) || hdpMatch) {
+      const line = parseAsianLine(hdpMatch ? hdpMatch[1] : entry.handicap);
+      if (!isNaN(line)) {
+        const cleanTeam = pickRaw.replace(/([+-]?\d+(?:\.\d+)?(?:\s*\/\s*[+-]?\d+(?:\.\d+)?)?)/g, '').trim();
+        let pickedHome = null;
+        if (cleanTeam) {
+          if (isSameParticipant(cleanTeam, match.home) || /\b(chu|home|1)\b/.test(norm(cleanTeam))) pickedHome = true;
+          else if (isSameParticipant(cleanTeam, match.away) || /\b(khach|away|2)\b/.test(norm(cleanTeam))) pickedHome = false;
+        }
+        if (pickedHome !== null) {
+          const useSets = isSetSport && parsed.isMultiSet && Math.abs(line) <= 2.5;
+          const hVal = useSets ? parsed.homeSets : parsed.homeSum;
+          const aVal = useSets ? parsed.awaySets : parsed.awaySum;
+          const diff = pickedHome ? ((hVal + line) - aVal) : ((aVal + line) - hVal);
+          return { outcome: diffToOutcome(diff), liveStat };
+        }
+      }
+    }
+
+    // 3. Moneyline / 1X2 / Match Winner
+    const hWinVal = (isSetSport && parsed.isMultiSet) ? parsed.homeSets : parsed.homeSum;
+    const aWinVal = (isSetSport && parsed.isMultiSet) ? parsed.awaySets : parsed.awaySum;
+
+    if (/\b(hoa|draw|x)\b/.test(pickNorm)) {
+      return { outcome: hWinVal === aWinVal ? 'won' : 'lost', liveStat };
+    }
+    if (isSameParticipant(pickRaw, match.home) || pickNorm === '1' || /\b(chu|home)\b/.test(pickNorm)) {
+      return { outcome: hWinVal > aWinVal ? 'won' : 'lost', liveStat };
+    }
+    if (isSameParticipant(pickRaw, match.away) || pickNorm === '2' || /\b(khach|away)\b/.test(pickNorm)) {
+      return { outcome: aWinVal > hWinVal ? 'won' : 'lost', liveStat };
+    }
+
+    return { outcome: null, liveStat };
+  }
+
+  function evaluateTicket(t) {
+    if (!t.entries.length) return { state: 'open', actualPayout: '' };
+
+    const legResults = t.entries.map(e => {
+      const m = matchFor(e);
+      const { outcome } = gradeEntry(e, m);
+      return { entry: e, match: m, outcome };
+    });
+
+    // In a parlay or single, if any leg is definitively lost, the ticket is lost immediately
+    if (legResults.some(r => r.outcome === 'lost')) {
+      return { state: 'lost', actualPayout: '0.00' };
+    }
+
+    const allFinished = legResults.every(r => r.match.status === 'finished');
+    if (!allFinished) {
+      return { state: 'open', actualPayout: '' };
+    }
+
+    // All matches are finished and none is 'lost'
+    const allGraded = legResults.every(r => r.outcome !== null);
+    if (!allGraded) {
+      return { state: 'settled_unknown', actualPayout: '' };
+    }
+
+    const stakeNum = parseFloat(String(t.stake || '').replace(/,/g, ''));
+    let effectiveOdds = 1;
+    legResults.forEach(r => {
+      const legOdds = parseFloat(String(r.entry.price || '').replace(/,/g, '')) || 1;
+      const multFn = OUTCOME_META[r.outcome]?.mult || (o => o);
+      effectiveOdds *= multFn(legOdds);
+    });
+
+    if (effectiveOdds === 0) {
+      return { state: 'lost', actualPayout: '0.00' };
+    }
+    if (legResults.every(r => r.outcome === 'push')) {
+      return {
+        state: 'push',
+        actualPayout: !isNaN(stakeNum) ? stakeNum.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : ''
+      };
+    }
+
+    // Fallback to ticket total odds if single leg or standard full win
+    const ticketOdds = parseFloat(String(t.odds || '').replace(/,/g, ''));
+    const allFullWon = legResults.every(r => r.outcome === 'won');
+    const finalOdds = (allFullWon && !isNaN(ticketOdds) && ticketOdds > 0) ? ticketOdds : effectiveOdds;
+
+    const payoutStr = (!isNaN(stakeNum) && stakeNum > 0)
+      ? (stakeNum * finalOdds).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+      : '';
+
+    return { state: 'won', actualPayout: payoutStr };
+  }
+
   /* Match Resolution & Status Aggregation */
   function matchFor(e) {
     return db.matches.find(m => matchKey(m) === matchKey(e)) || e;
@@ -859,12 +1062,24 @@ tr:last-child td{border:0}
   /* Rendering */
   function renderTicketCard(t) {
     const s = ticketStatus(t);
+    const evalRes = evaluateTicket(t);
     const liveCount = t.entries.map(matchFor).filter(m => m.status === 'live').length;
-    const payout = calcPayout(t.stake, t.odds);
+    const estPayout = calcPayout(t.stake, t.odds);
     const sports = [...new Set(t.entries.map(e => matchFor(e).sport || e.sport || 'Bóng đá'))];
 
+    const cardClass = evalRes.state === 'won' ? 't-won' : evalRes.state === 'lost' ? 't-lost' : '';
+
+    let outcomePill = '';
+    if (evalRes.state === 'won') {
+      outcomePill = `<span class="pill res-won">✓ THẮNG VÉ${evalRes.actualPayout ? ` (+${evalRes.actualPayout})` : ''}</span>`;
+    } else if (evalRes.state === 'lost') {
+      outcomePill = `<span class="pill res-lost">✕ THUA VÉ</span>`;
+    } else if (evalRes.state === 'push') {
+      outcomePill = `<span class="pill res-push">= HÒA TIỀN</span>`;
+    }
+
     return `
-      <article class="ticket ${selected === t.id ? 'selected' : ''}" data-ticket="${esc(t.id)}">
+      <article class="ticket ${cardClass} ${selected === t.id ? 'selected' : ''}" data-ticket="${esc(t.id)}">
         <div class="row">
           <div>
             <div class="ticket-id">${esc(t.id)}</div>
@@ -876,10 +1091,11 @@ tr:last-child td{border:0}
           </div>
         </div>
         <div class="pills">
+          ${outcomePill}
           <span class="pill ${statusClass(s)}"><span class="dot"></span>${statusName(s)}${liveCount ? ` (${liveCount})` : ''}</span>
           ${sports.map(sp => `<span class="pill sport">${esc(sportBadge(sp))}</span>`).join('')}
           <span class="pill">Cược ${esc(t.stake || '—')}</span>
-          ${payout ? `<span class="pill" style="color:#86efac">Thu về ~${payout}</span>` : ''}
+          ${!outcomePill && estPayout ? `<span class="pill" style="color:#86efac">Dự kiến ~${estPayout}</span>` : ''}
         </div>
       </article>
     `;
@@ -887,13 +1103,26 @@ tr:last-child td{border:0}
 
   function renderDetail(t) {
     if (!t) return '<div class="empty">Chọn một vé bên trái để xem chi tiết.</div>';
-    const payout = calcPayout(t.stake, t.odds);
+    const estPayout = calcPayout(t.stake, t.odds);
+    const evalRes = evaluateTicket(t);
+
+    let headerOutcome = '';
+    if (evalRes.state === 'won') {
+      headerOutcome = `<span class="pill res-won" style="font-size:11px">✓ THẮNG VÉ${evalRes.actualPayout ? ` · Thu về ${evalRes.actualPayout}` : ''}</span>`;
+    } else if (evalRes.state === 'lost') {
+      headerOutcome = `<span class="pill res-lost" style="font-size:11px">✕ THUA VÉ</span>`;
+    } else if (evalRes.state === 'push') {
+      headerOutcome = `<span class="pill res-push" style="font-size:11px">= HÒA TIỀN</span>`;
+    }
 
     return `
       <div class="row" style="padding-bottom:12px;border-bottom:1px solid var(--line)">
         <div>
-          <b style="font-size:15px">${esc(t.id)}</b>
-          <div class="muted">${t.entries.length} trận · Odds <b>${esc(t.odds || '—')}</b> · Cược <b>${esc(t.stake || '—')}</b>${payout ? ` · Dự kiến <b style="color:var(--green)">${payout}</b>` : ''}</div>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+            <b style="font-size:15px">${esc(t.id)}</b>
+            ${headerOutcome}
+          </div>
+          <div class="muted" style="margin-top:3px">${t.entries.length} trận · Odds <b>${esc(t.odds || '—')}</b> · Cược <b>${esc(t.stake || '—')}</b>${!headerOutcome && estPayout ? ` · Dự kiến <b style="color:var(--green)">${estPayout}</b>` : ''}</div>
         </div>
         <button class="btn btn-sm danger" data-delete="${esc(t.id)}">Xóa vé</button>
       </div>
@@ -901,6 +1130,16 @@ tr:last-child td{border:0}
         const m = matchFor(e);
         const sp = m.sport || e.sport || 'Bóng đá';
         const displayScore = m.score || (m.status === 'scheduled' ? 'VS' : '0-0');
+        const { outcome, liveStat } = gradeEntry(e, m);
+
+        const outcomeBadge = outcome
+          ? `<span class="pill res-${outcome}">${OUTCOME_META[outcome].label}</span>`
+          : '';
+
+        const totalBadge = (m.status === 'live' || m.status === 'finished') && liveStat
+          ? `<span class="pill" style="color:#93c5fd">${esc(liveStat)}</span>`
+          : '';
+
         return `
           <div style="padding:13px 0;border-bottom:1px solid var(--line)">
             <div class="row">
@@ -908,15 +1147,17 @@ tr:last-child td{border:0}
                 <b>${esc(m.home)} – ${esc(m.away)}</b>
                 <div class="meta">${esc(sportBadge(sp))} · ${esc(m.league || 'Tự động dò giải')} ${m.time ? '· ' + esc(m.time) : ''}</div>
               </div>
-              <div style="display:flex;align-items:center;gap:6px">
+              <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end">
                 <span class="pill score-box ${m.status === 'live' ? 'is-live' : ''}">${esc(displayScore)}</span>
                 <span class="pill ${statusClass(m.status)}"><span class="dot"></span>${statusName(m.status)}</span>
+                ${outcomeBadge}
               </div>
             </div>
             <div class="pills">
               <span class="pill">${esc(e.market)}</span>
               <span class="pill" style="color:#fff">${esc(e.pick || 'Chưa rõ lựa chọn')}</span>
               <span class="pill" style="color:var(--yellow)">@${esc(e.price || '—')}</span>
+              ${totalBadge}
               <button class="btn btn-sm" data-edit="${esc(m.id)}" style="margin-left:auto" title="Sửa tên nếu viết tắt khác chuẩn">⚙ Tên đội</button>
             </div>
           </div>
@@ -927,10 +1168,13 @@ tr:last-child td{border:0}
 
   function render() {
     const ms = db.matches;
+    const wonTickets = db.tickets.filter(t => evaluateTicket(t).state === 'won').length;
+    const lostTickets = db.tickets.filter(t => evaluateTicket(t).state === 'lost').length;
+
     $('#sTickets').textContent = db.tickets.length;
-    $('#sMatches').textContent = ms.length;
     $('#sLive').textContent = ms.filter(m => m.status === 'live').length;
-    $('#sDone').textContent = ms.filter(m => m.status === 'finished').length;
+    $('#sWon').textContent = wonTickets;
+    $('#sLost').textContent = lostTickets;
 
     $('#recent').innerHTML = db.tickets.slice(0, 5).map(renderTicketCard).join('')
       || '<div class="empty">Chưa có vé nào. Bấm <b>＋ Thêm vé</b> để dán vé đầu tiên.</div>';
@@ -940,10 +1184,13 @@ tr:last-child td{border:0}
     const f = $('#ticketFilter')?.value || 'all';
     const ts = db.tickets.filter(t => {
       const st = ticketStatus(t);
+      const ev = evaluateTicket(t).state;
       const passFilter = f === 'all'
         || (f === 'live' && st === 'live')
+        || (f === 'won' && ev === 'won')
+        || (f === 'lost' && ev === 'lost')
         || (f === 'done' && st === 'finished')
-        || (f === 'open' && st !== 'finished');
+        || (f === 'open' && st !== 'finished' && ev !== 'lost');
       const passQuery = !q || norm(t.id + ' ' + t.entries.map(e => e.home + ' ' + e.away).join(' ')).includes(q);
       return passFilter && passQuery;
     });
@@ -991,8 +1238,11 @@ tr:last-child td{border:0}
     }).join('') || '<tr><td colspan="5"><div class="empty">Chưa có trận đấu nào.</div></td></tr>';
 
     // History Page
-    const doneTickets = db.tickets.filter(t => ticketStatus(t) === 'finished');
-    $('#history').innerHTML = doneTickets.map(renderTicketCard).join('') || '<div class="empty">Chưa có vé nào hoàn tất tất cả các trận.</div>';
+    const doneTickets = db.tickets.filter(t => {
+      const ev = evaluateTicket(t).state;
+      return ticketStatus(t) === 'finished' || ev === 'lost';
+    });
+    $('#history').innerHTML = doneTickets.map(renderTicketCard).join('') || '<div class="empty">Chưa có vé nào hoàn tất.</div>';
     $('#historyCount').textContent = doneTickets.length + ' vé';
 
     // Settings & Auto-Sync Indicator
@@ -1004,7 +1254,7 @@ tr:last-child td{border:0}
     if (db.autoSync) {
       badge.classList.remove('paused');
       badgeText.textContent = db.lastSync ? `AUTO · ${db.lastSync}` : 'AUTO 30s';
-      $('#syncStatusNote').innerHTML = `Tự động cập nhật tỷ số mỗi <b>30 giây</b>.<br>Lần cuối: <b>${esc(db.lastSync || 'Đang quét...')}</b>`;
+      $('#syncStatusNote').innerHTML = `Tự động cập nhật tỷ số & chấm kèo mỗi <b>30 giây</b>.<br>Lần cuối: <b>${esc(db.lastSync || 'Đang quét...')}</b>`;
     } else {
       badge.classList.add('paused');
       badgeText.textContent = 'AUTO TẮT';
@@ -1043,7 +1293,7 @@ tr:last-child td{border:0}
     closeModal();
     $('#raw').value = '';
     $('#preview').innerHTML = '';
-    say(`Đã lưu vé (${t.entries.length} trận). Đang tự động lấy tỷ số...`);
+    say(`Đã lưu vé (${t.entries.length} trận). Đang tự động lấy tỷ số & chấm kèo...`);
     syncLivescore(false);
   }
 
@@ -1073,7 +1323,7 @@ tr:last-child td{border:0}
     syncLivescore(false);
   }
 
-  /* Smart Multi-Source Auto Livescore Engine (365Scores + ESPN + TheSportsDB) */
+  /* Smart Multi-Source Auto Livescore Engine */
   const NOISE_WORDS = new Set(['fc', 'cf', 'sc', 'ac', 'fk', 'sk', 'afc', 'bc', 'club', 'team', 'united', 'city', 'real', 'sporting', 'atletico', 'deportivo', 'cd', 'ca', 'as', 'us', 'ss', 'vfb', 'tsg', 'rb', 'ik', 'bk', 'if']);
 
   function significantTokens(name) {
@@ -1092,7 +1342,6 @@ tr:last-child td{border:0}
     const ta = a.split(' ').filter(Boolean);
     const tb = b.split(' ').filter(Boolean);
 
-    // Match Tennis surnames ("Max Alcala Gurri" vs "M. Alcala Gurri" or "Alcala Gurri, Max")
     const surnameA = userInput.includes(',') ? ta[0] : ta[ta.length - 1];
     const surnameB = apiName.includes(',') ? tb[0] : tb[tb.length - 1];
     if (surnameA && surnameB && surnameA.length >= 5 && surnameA === surnameB) {
@@ -1108,6 +1357,17 @@ tr:last-child td{border:0}
     return hits >= 1 && (hits / Math.min(sigA.length, sigB.size)) >= 0.5;
   }
 
+  function flipScore(scoreStr) {
+    if (!scoreStr) return '';
+    return String(scoreStr)
+      .split(',')
+      .map(part => {
+        const m = part.trim().match(/^(\d+(?:\(\d+\))?)\s*([-:])\s*(\d+(?:\(\d+\))?)$/);
+        return m ? `${m[3]}${m[2]}${m[1]}` : part.trim();
+      })
+      .join(', ');
+  }
+
   function getDateStrings() {
     const now = new Date();
     const yesterday = new Date(now.getTime() - 86400000);
@@ -1120,7 +1380,6 @@ tr:last-child td{border:0}
     return [fmt(yesterday), fmt(now)];
   }
 
-  /* Source 1: 365Scores Web API (Covers ATP Challenger, ITF, Table Tennis, Minor Leagues & All Major Sports) */
   async function fetch365ScoresFeeds(dates) {
     const sports = [
       { id: 3, label: 'Tennis' },
@@ -1136,14 +1395,12 @@ tr:last-child td{border:0}
     ];
 
     const urls = [];
-    // Active / live / today allscores per sport
     sports.forEach(s => {
       urls.push({
         sportId: s.id,
         label: s.label,
         url: `https://webws.365scores.com/web/games/allscores/?appTypeId=5&langId=1&timezoneName=Asia/Ho_Chi_Minh&sportId=${s.id}`
       });
-      // Also query yesterday's finished matches for overnight fixtures
       urls.push({
         sportId: s.id,
         label: s.label,
@@ -1166,12 +1423,10 @@ tr:last-child td{border:0}
         const ac = g.awayCompetitor;
         if (!hc?.name || !ac?.name) return;
 
-        // statusGroup: 2 = scheduled, 3 = live, 4 = finished
         const status = g.statusGroup === 3 ? 'live' : g.statusGroup === 4 ? 'finished' : 'scheduled';
 
         let score = '';
         if (sportId === 3 || sportId === 11 || sportId === 5 || sportId === 12) {
-          // Extract set-by-set scores if available
           const setStages = Array.isArray(g.stages)
             ? g.stages.filter(st => /set/i.test(st.name || '') && st.homeCompetitorScore >= 0 && st.awayCompetitorScore >= 0)
             : [];
@@ -1199,7 +1454,6 @@ tr:last-child td{border:0}
     return results;
   }
 
-  /* Source 2: ESPN Scoreboards */
   function extractEspnCompetitorName(c) {
     return c?.team?.displayName
       || c?.team?.shortDisplayName
@@ -1311,7 +1565,6 @@ tr:last-child td{border:0}
     return results;
   }
 
-  /* Source 3: TheSportsDB */
   async function fetchSportsDbFeeds(dates) {
     const sportsMap = [
       { api: 'Soccer', label: 'Bóng đá' },
@@ -1410,7 +1663,6 @@ tr:last-child td{border:0}
 
       let updated = 0;
       db.matches.forEach(m => {
-        // Prefer matches that are live or finished over scheduled duplicates
         const candidates = liveFeed.filter(f =>
           (isSameParticipant(m.home, f.home) && isSameParticipant(m.away, f.away)) ||
           (isSameParticipant(m.home, f.away) && isSameParticipant(m.away, f.home))
@@ -1422,9 +1674,12 @@ tr:last-child td{border:0}
         if (hit) {
           const prevScore = m.score;
           const prevStatus = m.status;
+          const isReversed = !(isSameParticipant(m.home, hit.home) && isSameParticipant(m.away, hit.away));
 
           if (hit.status) m.status = hit.status;
-          if (hit.score && hit.status !== 'scheduled') m.score = hit.score;
+          if (hit.score && hit.status !== 'scheduled') {
+            m.score = isReversed ? flipScore(hit.score) : hit.score;
+          }
           if (hit.detail) m.time = hit.detail;
           if (hit.league) m.league = hit.league;
           if (hit.sport) m.sport = hit.sport;
@@ -1439,7 +1694,7 @@ tr:last-child td{border:0}
 
       if (!silent) {
         say(updated > 0
-          ? `Đã cập nhật tỷ số mới cho ${updated} trận.`
+          ? `Đã cập nhật tỷ số & kết quả cho ${updated} trận.`
           : `Đã đồng bộ ${liveFeed.length} trận trực tuyến.`);
       }
     } catch (err) {
@@ -1509,7 +1764,7 @@ tr:last-child td{border:0}
               <div class="muted" style="margin-top:4px">${esc(e.league || 'Tự động dò giải')} · ${esc(e.market)} · ${esc(e.pick || 'Chưa rõ kèo')} · @${esc(e.price || '—')}</div>
             </div>
           `).join('')}
-          <button class="btn primary" id="confirm" style="width:100%;justify-content:center;padding:10px">✓ Lưu vé & Tự động lấy tỷ số</button>
+          <button class="btn primary" id="confirm" style="width:100%;justify-content:center;padding:10px">✓ Lưu vé & Tự động chấm kết quả</button>
         </div>
       `;
       $('#confirm').onclick = () => saveTicket(draft);
