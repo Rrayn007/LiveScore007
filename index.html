@@ -269,7 +269,7 @@ tr:last-child td{border:0}
               </button>
             </div>
             <div class="notice info">
-              Khi trận <b>Đã kết thúc</b>, hệ thống tự tính tổng điểm/game/tỷ số để chốt <b>✓ THẮNG</b>, <b>✕ THUA</b> hoặc <b>= HÒA TIỀN</b> cho từng kèo và toàn bộ vé xiên.
+              Hệ thống tự đối chiếu giờ bóng lăn thực tế để không bị lẫn kết quả lượt đấu cũ. Khi trận <b>Đã kết thúc</b>, app tự chốt <b>✓ THẮNG</b>, <b>✕ THUA</b> hoặc <b>= HÒA TIỀN</b>.
             </div>
           </div>
         </div>
@@ -327,7 +327,7 @@ tr:last-child td{border:0}
         <div>
           <div class="eyebrow">Live Scoreboard</div>
           <h1>Bảng tỷ số trực tiếp</h1>
-          <div class="sub">Tự động cập nhật tỷ số, tên giải và trạng thái từ nguồn dữ liệu đa môn.</div>
+          <div class="sub">Tự động cập nhật tỷ số, giờ bóng lăn, tên giải và trạng thái từ nguồn dữ liệu đa môn.</div>
         </div>
         <button class="btn primary" id="addMatch">＋ Theo dõi trận</button>
       </div>
@@ -438,7 +438,7 @@ tr:last-child td{border:0}
               <button class="btn primary" id="saveProxy">Lưu cấu hình</button>
             </div>
             <div class="notice info">
-              App tự động gộp dữ liệu từ <b>365Scores + ESPN + TheSportsDB</b> (không cần API key), bao phủ cả <b>ATP Challenger, ITF, Bóng bàn, Bóng chuyền, Cầu lông, Bóng đá, Bóng rổ, Esports</b> và tự chấm kết quả ngay khi kết thúc trận.
+              App tự động đối chiếu giờ thi đấu từ <b>365Scores + ESPN + TheSportsDB</b> (không cần API key), tự bỏ qua các trận đã đá ở lượt cũ để tránh báo kết quả sớm.
             </div>
           </div>
         </div>
@@ -475,16 +475,16 @@ tr:last-child td{border:0}
 
       <div id="pastePane" style="margin-top:15px">
         <label class="muted" style="display:block;margin-bottom:6px">Nội dung vé cược</label>
-        <textarea id="raw" placeholder="Dán toàn bộ nội dung vé cược vào đây...&#10;&#10;Ví dụ:&#10;Galatasaray (N) -vs- Aston Villa&#10;Cược Chấp Galatasaray (N) -0.5 @ 1.92&#10;&#10;Lucia Bronzetti -vs- Alicia Herrero Linana&#10;Tài 20.5 @1.85"></textarea>
-        <p class="muted">Tự động tách riêng từng trận trong xiên, phân biệt chuẩn Bóng đá / Tennis / Bóng rổ và tự chốt <b>Thắng / Thua</b>.</p>
+        <textarea id="raw" placeholder="Dán toàn bộ nội dung vé cược vào đây...&#10;&#10;Ví dụ:&#10;SK Slovan Bratislava -vs- Real Betis&#10;Tài 3.5 @1.98&#10;&#10;Lucia Bronzetti -vs- Alicia Herrero Linana&#10;Tài 20.5 @1.85"></textarea>
+        <p class="muted">Tự động tách từng trận trong xiên, khớp đúng giờ thi đấu và tự chốt <b>Thắng / Thua</b>.</p>
         <button class="btn primary" id="parse">Phân tích vé</button>
         <div id="preview"></div>
       </div>
 
       <div id="manualPane" style="display:none;margin-top:15px">
         <div class="formgrid">
-          <div><label>Đội 1 / Tay vợt 1 *</label><input class="field" id="home" placeholder="VD: Galatasaray"></div>
-          <div><label>Đội 2 / Tay vợt 2 *</label><input class="field" id="away" placeholder="VD: Aston Villa"></div>
+          <div><label>Đội 1 / Tay vợt 1 *</label><input class="field" id="home" placeholder="VD: Real Madrid"></div>
+          <div><label>Đội 2 / Tay vợt 2 *</label><input class="field" id="away" placeholder="VD: PSV Eindhoven"></div>
           <div>
             <label>Môn thể thao</label>
             <select class="field" id="sport">
@@ -582,10 +582,11 @@ tr:last-child td{border:0}
         matches: Array.isArray(parsed?.matches) ? parsed.matches : [],
         proxy: parsed?.proxy || '',
         autoSync: parsed?.autoSync !== undefined ? Boolean(parsed.autoSync) : true,
-        lastSync: parsed?.lastSync || ''
+        lastSync: parsed?.lastSync || '',
+        v2TimeFixApplied: Boolean(parsed?.v2TimeFixApplied)
       };
     } catch {
-      return { tickets: [], matches: [], proxy: '', autoSync: true, lastSync: '' };
+      return { tickets: [], matches: [], proxy: '', autoSync: true, lastSync: '', v2TimeFixApplied: true };
     }
   })();
 
@@ -649,6 +650,16 @@ tr:last-child td{border:0}
     scheduled: 'pending'
   }[s] || 'pending');
 
+  function formatKickoffVN(ts) {
+    if (!ts || isNaN(ts)) return '';
+    const d = new Date(ts);
+    const hh = String(d.getHours()).padStart(2, '0');
+    const mm = String(d.getMinutes()).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    const mo = String(d.getMonth() + 1).padStart(2, '0');
+    return `${hh}:${mm} ${dd}/${mo}`;
+  }
+
   /* Navigation & Modals */
   function go(p) {
     $$('[data-page]').forEach(x => x.classList.toggle('active', x.dataset.page === p));
@@ -690,13 +701,13 @@ tr:last-child td{border:0}
   /* =========================================================
      ACCURATE SPORT DETECTION & TENNIS SCORE SANITIZER
      ========================================================= */
-  const CLUB_KEYWORDS = /\b(fc|cf|sc|ac|fk|sk|afc|bc|club|team|united|city|real|sporting|atletico|deportivo|inter|dynamo|spartak|lokomotiv|cska|zenit|ajax|psv|feyenoord|benfica|porto|celtic|rangers|arsenal|chelsea|liverpool|everton|villa|albion|rovers|wanderers|hotspur|palace|forest|county|town|borussia|bayern|eintracht|werder|fortuna|hertha|union|olympique|racing|stade|juventus|milan|napoli|roma|lazio|atalanta|fiorentina|torino|bologna|udinese|genoa|parma|como|venezia|cagliari|empoli|lecce|monza|verona|sevilla|valencia|villarreal|betis|sociedad|osasuna|getafe|celta|mallorca|alaves|girona|rayo|espanyol|leganes|valladolid|las palmas|galatasaray|fenerbahce|besiktas|trabzonspor|shakhtar|slavia|sparta|plzen|salzburg|sturm|rapid|anderlecht|brugge|gent|genk|olympiacos|panathinaikos|paok|aek|dinamo|hajduk|partizan|crvena|ferencvaros|legia|lech|rosenborg|bodo|molde|malmo|djurgarden|aik|hammarby|copenhagen|midtjylland|brondby|young boys|basel|zurich|servette|lugano|u17|u18|u19|u20|u21|u23|women|reserves)\b/;
+  const CLUB_KEYWORDS = /\b(fc|cf|sc|ac|fk|sk|afc|bc|club|team|united|city|real|sporting|atletico|deportivo|inter|dynamo|spartak|lokomotiv|cska|zenit|ajax|psv|feyenoord|benfica|porto|celtic|rangers|arsenal|chelsea|liverpool|everton|villa|albion|rovers|wanderers|hotspur|palace|forest|county|town|borussia|bayern|eintracht|werder|fortuna|hertha|union|olympique|racing|stade|juventus|milan|napoli|roma|lazio|atalanta|fiorentina|torino|bologna|udinese|genoa|parma|como|venezia|cagliari|empoli|lecce|monza|verona|sevilla|valencia|villarreal|betis|sociedad|osasuna|getafe|celta|mallorca|alaves|girona|rayo|espanyol|leganes|valladolid|las palmas|galatasaray|fenerbahce|besiktas|trabzonspor|shakhtar|slavia|sparta|plzen|salzburg|sturm|rapid|anderlecht|brugge|gent|genk|olympiacos|panathinaikos|paok|aek|dinamo|hajduk|partizan|crvena|ferencvaros|legia|lech|rosenborg|bodo|molde|malmo|djurgarden|aik|hammarby|copenhagen|midtjylland|brondby|young boys|basel|zurich|servette|lugano|slovan|bratislava|lens|leipzig|eindhoven|u17|u18|u19|u20|u21|u23|women|reserves)\b/;
 
   const FOOTBALL_LEAGUE_KEYWORDS = /\b(bong da|soccer|football|uefa|youth league|champions league|europa|conference league|premier league|la liga|serie a|serie b|bundesliga|ligue 1|ligue 2|eredivisie|primeira liga|super lig|world cup|euro|copa|afc|v league|j league|k league|fa cup|carabao|efl|mls|hiep 1|hiep 2|phat goc|corner|the phat|1x2)\b/;
 
   function looksLikePersonPair(home, away) {
     if (!home || !away) return false;
-    if (/\([Nn]\)/.test(home) || /\([Nn]\)/.test(away)) return false; // Neutral venue tag = team sport
+    if (/\([Nn]\)/.test(home) || /\([Nn]\)/.test(away)) return false;
     const hNorm = norm(home);
     const aNorm = norm(away);
     if (CLUB_KEYWORDS.test(hNorm) || CLUB_KEYWORDS.test(aNorm)) return false;
@@ -709,12 +720,9 @@ tr:last-child td{border:0}
   function detectSport(text, home = '', away = '') {
     const t = norm(`${text} ${home} ${away}`);
 
-    // 1. Explicit Football checks FIRST so team/UEFA matches are never mislabeled as Tennis
     if (FOOTBALL_LEAGUE_KEYWORDS.test(t) || CLUB_KEYWORDS.test(norm(`${home} ${away}`)) || /\([Nn]\)/.test(`${home} ${away}`)) {
       return 'Bóng đá';
     }
-
-    // 2. Explicit Other Sports
     if (/\b(table tennis|ping pong|bong ban|ittf|wtt|setka|tt cup)\b/.test(t)) return 'Bóng bàn';
     if (/\b(badminton|cau long|bwf)\b/.test(t)) return 'Cầu lông';
     if (/\b(nba|ncaa|wnba|cba|euroleague|bong ro|basketball|quarter)\b/.test(t)) return 'Bóng rổ';
@@ -725,12 +733,10 @@ tr:last-child td{border:0}
     if (/\b(ufc|mma|boxing|quyen anh|bellator|one championship)\b/.test(t)) return 'MMA / Võ thuật';
     if (/\b(esports|lol|league of legends|dota|cs2|csgo|valorant|lck|lpl|esoccer|e soccer)\b/.test(t)) return 'Esports';
 
-    // 3. Explicit Tennis keywords (removed overly broad "game" keyword)
     if (/\b(tennis|quan vot|atp|wta|itf|challenger|wimbledon|roland garros|us open|australian open|grand slam|davis cup|billie jean)\b/.test(t)) {
       return 'Tennis';
     }
 
-    // 4. Heuristic: Over/Under line 15.5–42.5 + 2 person names => Tennis
     const ouMatch = text.match(/(?:tài|xỉu|trên|dưới|over|under)\s*[+-]?\s*(\d{1,3}(?:\.\d+)?)/i);
     const ouVal = ouMatch ? parseFloat(ouMatch[1]) : NaN;
     const isCornerOrCard = /corner|phạt góc|thẻ|card/i.test(text);
@@ -741,7 +747,6 @@ tr:last-child td{border:0}
     return 'Bóng đá';
   }
 
-  /* Strip stray trailing set-tally ("2-0" / "0-2") from 2-set finished Tennis scores like "6-4, 6-3, 2-0" */
   function sanitizeTennisScore(scoreStr, status = 'finished') {
     if (!scoreStr) return '';
     const parts = String(scoreStr).split(',').map(p => p.trim()).filter(Boolean);
@@ -755,7 +760,6 @@ tr:last-child td{border:0}
         const s3h = parseInt(m3[1], 10), s3a = parseInt(m3[2], 10);
         const hSets = (s1h > s1a ? 1 : 0) + (s2h > s2a ? 1 : 0);
         const aSets = (s1a > s1h ? 1 : 0) + (s2a > s2h ? 1 : 0);
-        // If one player already won 2-0 in sets, a 3rd set doesn't exist; or if finished, 2-0/0-2 cannot be a completed 3rd set
         if ((hSets === 2 && s3h === 2 && s3a === 0) || (aSets === 2 && s3h === 0 && s3a === 2) ||
             (status === 'finished' && ((s3h === 2 && s3a === 0) || (s3h === 0 && s3a === 2)))) {
           return `${parts[0]}, ${parts[1]}`;
@@ -765,12 +769,24 @@ tr:last-child td{border:0}
     return parts.join(', ');
   }
 
-  /* Auto-repair existing saved data in localStorage on load */
   function repairSavedData() {
     let changed = false;
 
+    // One-time cleanup of matches falsely marked 'Ended' from historical matchday collisions
+    if (!db.v2TimeFixApplied) {
+      db.matches.forEach(m => {
+        if (m.status === 'finished' && (m.time === 'Ended' || /uefa youth league/i.test(m.league || ''))) {
+          m.status = 'scheduled';
+          m.score = '';
+          m.time = '';
+          changed = true;
+        }
+      });
+      db.v2TimeFixApplied = true;
+      changed = true;
+    }
+
     db.matches.forEach(m => {
-      // Fix football matches that were previously misclassified as Tennis
       if (m.sport === 'Tennis') {
         const checkStr = `${m.league || ''} ${m.home || ''} ${m.away || ''}`;
         if (FOOTBALL_LEAGUE_KEYWORDS.test(norm(checkStr)) || CLUB_KEYWORDS.test(norm(checkStr)) || /\([Nn]\)/.test(checkStr)) {
@@ -778,7 +794,6 @@ tr:last-child td{border:0}
           changed = true;
         }
       }
-      // Fix trailing 2-0 set summary appended to Tennis scores (e.g. "6-4, 6-3, 2-0" -> "6-4, 6-3")
       if (m.sport === 'Tennis' && m.score) {
         const fixedScore = sanitizeTennisScore(m.score, m.status);
         if (fixedScore !== m.score) {
@@ -818,6 +833,27 @@ tr:last-child td{border:0}
     return home.length > 1 && away.length > 1 ? { home, away } : null;
   }
 
+  function parseKickoffTimestamp(timeStr, refCreated = Date.now()) {
+    if (!timeStr) return NaN;
+    const m = String(timeStr).match(/(?:(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?\s+)?(\d{1,2}):(\d{2})/);
+    if (!m) return NaN;
+    const ref = new Date(refCreated);
+    const hour = parseInt(m[4], 10);
+    const min = parseInt(m[5], 10);
+    if (m[1] && m[2]) {
+      const day = parseInt(m[1], 10);
+      const month = parseInt(m[2], 10) - 1;
+      const year = m[3] ? (m[3].length === 2 ? 2000 + parseInt(m[3], 10) : parseInt(m[3], 10)) : ref.getFullYear();
+      return new Date(year, month, day, hour, min, 0, 0).getTime();
+    }
+    const candidate = new Date(ref.getFullYear(), ref.getMonth(), ref.getDate(), hour, min, 0, 0).getTime();
+    // If kickoff hour is more than 12h earlier than ticket creation, it belongs to next day
+    if (candidate < refCreated - 12 * 3600000) {
+      return candidate + 86400000;
+    }
+    return candidate;
+  }
+
   function detectStatusAndScore(blockText) {
     let status = 'scheduled';
     let score = '';
@@ -845,7 +881,6 @@ tr:last-child td{border:0}
     const odds = (raw.match(/(?:Odds|Tổng\s*odds|Tỷ\s*lệ)\s*:\s*([\d.,]+)/i) || [])[1] || '';
     const stake = (raw.match(/(?:Tiền\s*Cược|Stake|Cược)\s*:\s*([\d.,]+)/i) || [])[1] || '';
 
-    // Pre-scan all match line indices so each leg's context is strictly bounded before the next leg
     const matchLocations = [];
     lines.forEach((line, idx) => {
       const pair = teamPair(line);
@@ -854,6 +889,7 @@ tr:last-child td{border:0}
 
     const entries = [];
     const seen = new Set();
+    const now = Date.now();
 
     matchLocations.forEach((loc, mIdx) => {
       const { idx: i, pair } = loc;
@@ -879,7 +915,6 @@ tr:last-child td{border:0}
         : /1x2|thắng hòa thua|moneyline/i.test(fullContext) ? 'Thắng/Thua'
         : 'Toàn trận';
 
-      // Extract odds and selection across single-line OR multi-line W88/CMD layouts
       let price = '';
       let pick = '';
       const oddsLineIdx = legLines.findIndex(x => /@\s*\d/.test(x) || /^[1-9]\d*\.\d{2,3}$/.test(x));
@@ -895,7 +930,6 @@ tr:last-child td{border:0}
           .replace(/^[1-9]\d*\.\d{2,3}$/, '')
           .trim();
 
-        // If selection is on the line(s) right before @odds
         if (!inlinePick && oddsLineIdx > 0) {
           const candidateLines = legLines.slice(0, oddsLineIdx).filter(x =>
             !/^(cược chấp|hiệp 1|tài\/xỉu|1x2|toàn trận|đang chạy|\d{1,2}\/\d{1,2}|\d{1,2}:\d{2})$/i.test(x)
@@ -904,7 +938,6 @@ tr:last-child td{border:0}
         }
         pick = inlinePick;
       } else {
-        // Fallback: pick without '@'
         const fallbackLine = legLines.find(x =>
           /(?:tài|xỉu|over|under|[+-]\d+(?:\.\d+)?)/i.test(x) ||
           isSameParticipant(x, pair.home) ||
@@ -918,7 +951,8 @@ tr:last-child td{border:0}
       const league = [...prevLines].reverse()
         .find(x => /league|championship|serie|premier|uefa|national|cup|liga|nba|ncaa|bundesliga|ligue|atp|wta|itf|challenger|open|nhl|nfl|mlb|ufc|v-league/i.test(x)) || '';
 
-      const time = (legLines.join(' ').match(/\b(?:\d{1,2}\/\d{1,2}\s+)?\d{1,2}:\d{2}\b/) || [])[0] || '';
+      const time = (legLines.join(' ').match(/\b(?:\d{1,2}\/\d{1,2}(?:\/\d{2,4})?\s+)?\d{1,2}:\d{2}\b/) || [])[0] || '';
+      const kickoffTs = parseKickoffTimestamp(time, now);
 
       entries.push({
         id: uid(),
@@ -930,6 +964,8 @@ tr:last-child td{border:0}
         handicap,
         price,
         time,
+        kickoffTs: isNaN(kickoffTs) ? null : kickoffTs,
+        created: now,
         status,
         score: sport === 'Tennis' ? sanitizeTennisScore(score, status) : score
       });
@@ -1024,12 +1060,10 @@ tr:last-child td{border:0}
       return { outcome: null, liveStat };
     }
 
-    // Do not auto-grade 1st-half or corners/cards from Full-Time goals
     if (/corner|phat goc|the|card|hiep 1|\b1h\b|\bht\b/.test(marketNorm)) {
       return { outcome: null, liveStat };
     }
 
-    // 1. Over / Under (Tài / Xỉu)
     const isOver = /\b(tai|tren|over|o)\b/.test(pickNorm);
     const isUnder = /\b(xiu|duoi|under|u)\b/.test(pickNorm);
     if (isOver || isUnder || /tai xiu|over under/.test(marketNorm)) {
@@ -1042,7 +1076,6 @@ tr:last-child td{border:0}
       }
     }
 
-    // 2. Handicap (Cược chấp)
     const hdpMatch = pickRaw.match(/([+-]\d+(?:\.\d+)?(?:\s*\/\s*[+-]?\d+(?:\.\d+)?)?)/);
     if (/cuoc chap|handicap|hdp/.test(marketNorm) || hdpMatch) {
       const line = parseAsianLine(hdpMatch ? hdpMatch[1] : entry.handicap);
@@ -1066,7 +1099,6 @@ tr:last-child td{border:0}
       }
     }
 
-    // 3. Moneyline / 1X2 / Match Winner
     const hWinVal = (isSetSport && parsed.isMultiSet) ? parsed.homeSets : parsed.homeSum;
     const aWinVal = (isSetSport && parsed.isMultiSet) ? parsed.awaySets : parsed.awaySum;
 
@@ -1226,7 +1258,7 @@ tr:last-child td{border:0}
         const m = matchFor(e);
         const sp = m.sport || e.sport || 'Bóng đá';
         const cleanScore = sp === 'Tennis' ? sanitizeTennisScore(m.score, m.status) : m.score;
-        const displayScore = cleanScore || (m.status === 'scheduled' ? 'VS' : '0-0');
+        const displayScore = (m.status !== 'scheduled' && cleanScore) ? cleanScore : (m.status === 'scheduled' ? 'VS' : '0-0');
         const { outcome, liveStat } = gradeEntry(e, m);
 
         const outcomeBadge = outcome
@@ -1311,12 +1343,12 @@ tr:last-child td{border:0}
     $('#matchRows').innerHTML = filtered.map(m => {
       const sp = m.sport || 'Bóng đá';
       const cleanScore = sp === 'Tennis' ? sanitizeTennisScore(m.score, m.status) : m.score;
-      const displayScore = cleanScore || (m.status === 'scheduled' ? '—' : '0-0');
+      const displayScore = (m.status !== 'scheduled' && cleanScore) ? cleanScore : (m.status === 'scheduled' ? '—' : '0-0');
       return `
         <tr>
           <td>
             <b>${esc(m.home)} – ${esc(m.away)}</b>
-            <div class="muted">${esc(m.time || 'Đang chờ giờ / tiến độ')}</div>
+            <div class="muted">${esc(m.time || 'Đang chờ giờ thi đấu')}</div>
           </td>
           <td>
             <span class="pill sport" style="margin-bottom:3px">${esc(sportBadge(sp))}</span>
@@ -1370,28 +1402,31 @@ tr:last-child td{border:0}
       t.id += '-' + Date.now().toString().slice(-4);
     }
 
+    const now = Date.now();
     t.entries.forEach(e => {
       const existing = db.matches.find(m => matchKey(m) === matchKey(e));
       if (!existing) {
-        db.matches.unshift({ ...e });
+        db.matches.unshift({ ...e, created: now });
       } else {
+        existing.created = now;
+        if (e.kickoffTs) existing.kickoffTs = e.kickoffTs;
         if (e.status === 'finished' || (e.status === 'live' && existing.status === 'scheduled')) {
           existing.status = e.status;
         }
         if (e.score) existing.score = e.score;
         if (e.league && !existing.league) existing.league = e.league;
-        if (e.time && !existing.time) existing.time = e.time;
+        if (e.time) existing.time = e.time;
         if (e.sport) existing.sport = e.sport;
       }
     });
 
-    db.tickets.unshift({ ...t, created: Date.now() });
+    db.tickets.unshift({ ...t, created: now });
     selected = t.id;
     persist();
     closeModal();
     $('#raw').value = '';
     $('#preview').innerHTML = '';
-    say(`Đã lưu vé (${t.entries.length} trận). Đang tự động lấy tỷ số & chấm kèo...`);
+    say(`Đã lưu vé (${t.entries.length} trận). Đang tự động lấy lịch & tỷ số...`);
     syncLivescore(false);
   }
 
@@ -1409,6 +1444,8 @@ tr:last-child td{border:0}
       sport: $('#sport').value || 'Bóng đá',
       league: $('#league').value.trim(),
       time: '',
+      kickoffTs: null,
+      created: Date.now(),
       status: 'scheduled',
       score: '',
       market: 'Theo dõi tự động'
@@ -1417,11 +1454,13 @@ tr:last-child td{border:0}
     persist();
     closeModal();
     ['home', 'away', 'league'].forEach(x => $('#' + x).value = '');
-    say('Đã thêm cặp đấu. Đang tự động lấy tỷ số...');
+    say('Đã thêm cặp đấu. Đang tự động lấy lịch & tỷ số...');
     syncLivescore(false);
   }
 
-  /* Smart Multi-Source Auto Livescore Engine */
+  /* =========================================================
+     TIME-AWARE MULTI-SOURCE LIVE ENGINE
+     ========================================================= */
   const NOISE_WORDS = new Set(['fc', 'cf', 'sc', 'ac', 'fk', 'sk', 'afc', 'bc', 'club', 'team', 'united', 'city', 'real', 'sporting', 'atletico', 'deportivo', 'cd', 'ca', 'as', 'us', 'ss', 'vfb', 'tsg', 'rb', 'ik', 'bk', 'if', 'n']);
 
   function significantTokens(name) {
@@ -1469,13 +1508,23 @@ tr:last-child td{border:0}
   function getDateStrings() {
     const now = new Date();
     const yesterday = new Date(now.getTime() - 86400000);
+    const tomorrow = new Date(now.getTime() + 86400000);
     const fmt = d => {
       const y = d.getFullYear();
       const m = String(d.getMonth() + 1).padStart(2, '0');
       const day = String(d.getDate()).padStart(2, '0');
       return { compact: `${y}${m}${day}`, iso: `${y}-${m}-${day}`, slash: `${day}/${m}/${y}` };
     };
-    return [fmt(yesterday), fmt(now)];
+    return [fmt(yesterday), fmt(now), fmt(tomorrow)];
+  }
+
+  function normalizeStatusWithClock(rawStatus, startTimeMs) {
+    const now = Date.now();
+    // If kickoff time is clearly in the future (> 5 minutes ahead), it CANNOT be live or finished
+    if (startTimeMs && !isNaN(startTimeMs) && startTimeMs > now + 5 * 60 * 1000) {
+      return 'scheduled';
+    }
+    return rawStatus;
   }
 
   async function fetch365ScoresFeeds(dates) {
@@ -1494,11 +1543,19 @@ tr:last-child td{border:0}
 
     const urls = [];
     sports.forEach(s => {
+      // Live & today/upcoming games
       urls.push({
         sportId: s.id,
         label: s.label,
         url: `https://webws.365scores.com/web/games/allscores/?appTypeId=5&langId=1&timezoneName=Asia/Ho_Chi_Minh&sportId=${s.id}`
       });
+      // Fixtures for today & tomorrow
+      urls.push({
+        sportId: s.id,
+        label: s.label,
+        url: `https://webws.365scores.com/web/games/fixtures/?appTypeId=5&langId=1&timezoneName=Asia/Ho_Chi_Minh&sportId=${s.id}&startDate=${dates[1].slash}&endDate=${dates[2].slash}`
+      });
+      // Recent results (yesterday & today)
       urls.push({
         sportId: s.id,
         label: s.label,
@@ -1521,27 +1578,35 @@ tr:last-child td{border:0}
         const ac = g.awayCompetitor;
         if (!hc?.name || !ac?.name) return;
 
-        const status = g.statusGroup === 3 ? 'live' : g.statusGroup === 4 ? 'finished' : 'scheduled';
+        const startTimeMs = g.startTime ? Date.parse(g.startTime) : NaN;
+        const rawSt = g.statusGroup === 3 ? 'live' : g.statusGroup === 4 ? 'finished' : 'scheduled';
+        const status = normalizeStatusWithClock(rawSt, startTimeMs);
 
         let score = '';
-        if (sportId === 3 || sportId === 11 || sportId === 5 || sportId === 12) {
-          // Match ONLY individual numbered sets ("1st Set", "2nd Set", "Set 1"...), NEVER summary stage "Sets" (2-0)
-          const setStages = Array.isArray(g.stages)
-            ? g.stages.filter(st => {
-                const nm = String(st.name || '').trim();
-                const isSingleSet = /^(?:1st|2nd|3rd|4th|5th|\d+(?:st|nd|rd|th)?)\s*set$/i.test(nm) || /^set\s*\d+$/i.test(nm);
-                return isSingleSet && st.homeCompetitorScore >= 0 && st.awayCompetitorScore >= 0;
-              })
-            : [];
-          if (setStages.length) {
-            score = setStages.map(st => `${st.homeCompetitorScore}-${st.awayCompetitorScore}`).join(', ');
+        if (status !== 'scheduled') {
+          if (sportId === 3 || sportId === 11 || sportId === 5 || sportId === 12) {
+            const setStages = Array.isArray(g.stages)
+              ? g.stages.filter(st => {
+                  const nm = String(st.name || '').trim();
+                  const isSingleSet = /^(?:1st|2nd|3rd|4th|5th|\d+(?:st|nd|rd|th)?)\s*set$/i.test(nm) || /^set\s*\d+$/i.test(nm);
+                  return isSingleSet && st.homeCompetitorScore >= 0 && st.awayCompetitorScore >= 0;
+                })
+              : [];
+            if (setStages.length) {
+              score = setStages.map(st => `${st.homeCompetitorScore}-${st.awayCompetitorScore}`).join(', ');
+            } else if (hc.score >= 0 && ac.score >= 0) {
+              score = `${hc.score}-${ac.score}`;
+            }
+            if (sportId === 3) score = sanitizeTennisScore(score, status);
           } else if (hc.score >= 0 && ac.score >= 0) {
             score = `${hc.score}-${ac.score}`;
           }
-          if (sportId === 3) score = sanitizeTennisScore(score, status);
-        } else if (hc.score >= 0 && ac.score >= 0) {
-          score = `${hc.score}-${ac.score}`;
         }
+
+        const kickoffLabel = formatKickoffVN(startTimeMs);
+        const detail = status === 'scheduled'
+          ? (kickoffLabel || g.statusText || '')
+          : (g.statusText || kickoffLabel || '');
 
         results.push({
           home: hc.name,
@@ -1550,7 +1615,8 @@ tr:last-child td{border:0}
           league: g.competitionDisplayName || compMap.get(g.competitionId) || '',
           score,
           status,
-          detail: g.statusText || ''
+          startTimeMs: isNaN(startTimeMs) ? null : startTimeMs,
+          detail
         });
       });
     });
@@ -1587,12 +1653,21 @@ tr:last-child td{border:0}
     const away = extractEspnCompetitorName(c2);
     if (!home || !away) return null;
 
+    const isoDate = comp.date || fallbackEvent?.date || '';
+    const startTimeMs = isoDate ? Date.parse(isoDate) : NaN;
     const statusObj = comp.status || fallbackEvent?.status || {};
     const state = statusObj.type?.state;
-    const status = state === 'in' ? 'live' : state === 'post' ? 'finished' : 'scheduled';
-    const rawScore = sportLabel === 'Tennis'
-      ? formatTennisScore(c1, c2)
-      : `${c1.score ?? 0}-${c2.score ?? 0}`;
+    const rawSt = state === 'in' ? 'live' : state === 'post' ? 'finished' : 'scheduled';
+    const status = normalizeStatusWithClock(rawSt, startTimeMs);
+
+    const rawScore = status === 'scheduled'
+      ? ''
+      : (sportLabel === 'Tennis' ? formatTennisScore(c1, c2) : `${c1.score ?? 0}-${c2.score ?? 0}`);
+
+    const kickoffLabel = formatKickoffVN(startTimeMs);
+    const detail = status === 'scheduled'
+      ? (kickoffLabel || statusObj.type?.shortDetail || '')
+      : (statusObj.type?.shortDetail || kickoffLabel || '');
 
     return {
       home,
@@ -1601,7 +1676,8 @@ tr:last-child td{border:0}
       league: fallbackEvent?.season?.slug || comp?.league?.abbreviation || '',
       score: sportLabel === 'Tennis' ? sanitizeTennisScore(rawScore, status) : rawScore,
       status,
-      detail: statusObj.type?.shortDetail || ''
+      startTimeMs: isNaN(startTimeMs) ? null : startTimeMs,
+      detail
     };
   }
 
@@ -1706,31 +1782,82 @@ tr:last-child td{border:0}
 
       data.events.forEach(ev => {
         if (!ev.strHomeTeam || !ev.strAwayTeam) return;
+        const isoStr = ev.strTimestamp || (ev.dateEvent ? `${ev.dateEvent}T${ev.strTime || '00:00:00'}Z` : '');
+        const startTimeMs = isoStr ? Date.parse(isoStr) : NaN;
+
         const rawStatus = String(ev.strStatus || '').toLowerCase();
         const hasScore = ev.intHomeScore !== null && ev.intAwayScore !== null && ev.intHomeScore !== '' && ev.intAwayScore !== '';
 
-        let status = 'scheduled';
+        let rawSt = 'scheduled';
         if (/\b(ft|finished|aet|pen|ended|closed|complete)\b/.test(rawStatus)) {
-          status = 'finished';
+          rawSt = 'finished';
         } else if (/\b(live|in progress|1h|2h|ht|q1|q2|q3|q4|ot|set|halftime)\b/.test(rawStatus) || /\d+'/.test(rawStatus)) {
-          status = 'live';
+          rawSt = 'live';
         } else if (hasScore && rawStatus === '') {
-          status = 'finished';
+          rawSt = 'finished';
         }
+
+        const status = normalizeStatusWithClock(rawSt, startTimeMs);
+        const kickoffLabel = formatKickoffVN(startTimeMs);
 
         results.push({
           home: ev.strHomeTeam,
           away: ev.strAwayTeam,
           sport: label,
           league: ev.strLeague || '',
-          score: hasScore ? `${ev.intHomeScore}-${ev.intAwayScore}` : '',
+          score: (status !== 'scheduled' && hasScore) ? `${ev.intHomeScore}-${ev.intAwayScore}` : '',
           status,
-          detail: ev.strStatus || ev.strTime?.slice(0, 5) || ''
+          startTimeMs: isNaN(startTimeMs) ? null : startTimeMs,
+          detail: status === 'scheduled' ? (kickoffLabel || ev.strTime?.slice(0, 5) || '') : (ev.strStatus || kickoffLabel || '')
         });
       });
     });
 
     return results;
+  }
+
+  /* Select the right fixture (never overwrite upcoming matches with past matchdays!) */
+  function pickBestCandidate(m, candidates) {
+    if (!candidates.length) return null;
+
+    const sameSport = candidates.filter(c => c.sport === m.sport);
+    const pool = sameSport.length ? sameSport : candidates;
+
+    const now = Date.now();
+    const refTime = m.kickoffTs || m.created || now;
+
+    // 1. Filter out historical fixtures from previous matchdays (started > 14 hours before reference time)
+    const relevant = pool.filter(c => {
+      if (!c.startTimeMs) return true;
+      return c.startTimeMs >= refTime - 14 * 3600000;
+    });
+    const activePool = relevant.length ? relevant : pool;
+
+    // 2. If user's match has an explicit parsed kickoff time, pick the fixture closest in time
+    if (m.kickoffTs) {
+      const sortedByTime = [...activePool].sort((a, b) => {
+        const da = a.startTimeMs ? Math.abs(a.startTimeMs - m.kickoffTs) : 9e15;
+        const db = b.startTimeMs ? Math.abs(b.startTimeMs - m.kickoffTs) : 9e15;
+        return da - db;
+      });
+      return sortedByTime[0];
+    }
+
+    // 3. Priority order: Live match -> Upcoming Scheduled match -> Recent Finished match (within last 14h)
+    const liveHit = activePool.find(c => c.status === 'live');
+    if (liveHit) return liveHit;
+
+    const upcomingScheduled = activePool
+      .filter(c => c.status === 'scheduled' && (!c.startTimeMs || c.startTimeMs >= now - 30 * 60000))
+      .sort((a, b) => (a.startTimeMs || 9e15) - (b.startTimeMs || 9e15));
+    if (upcomingScheduled.length) return upcomingScheduled[0];
+
+    const recentFinished = activePool
+      .filter(c => c.status === 'finished' && (!c.startTimeMs || c.startTimeMs >= refTime - 14 * 3600000))
+      .sort((a, b) => (b.startTimeMs || 0) - (a.startTimeMs || 0));
+    if (recentFinished.length) return recentFinished[0];
+
+    return null;
   }
 
   async function syncLivescore(silent = false) {
@@ -1772,13 +1899,8 @@ tr:last-child td{border:0}
           (isSameParticipant(m.home, f.home) && isSameParticipant(m.away, f.away)) ||
           (isSameParticipant(m.home, f.away) && isSameParticipant(m.away, f.home))
         );
-        // Prefer candidate matching current sport first, then live/finished status
-        const sameSportCandidates = candidates.filter(c => c.sport === m.sport);
-        const pool = sameSportCandidates.length ? sameSportCandidates : candidates;
 
-        const hit = pool.find(c => c.status === 'live')
-          || pool.find(c => c.status === 'finished')
-          || pool[0];
+        const hit = pickBestCandidate(m, candidates);
 
         if (hit) {
           const prevScore = m.score;
@@ -1790,7 +1912,9 @@ tr:last-child td{border:0}
           if (hit.sport) m.sport = hit.sport;
           if (hit.detail) m.time = hit.detail;
 
-          if (hit.score && hit.status !== 'scheduled') {
+          if (m.status === 'scheduled') {
+            m.score = '';
+          } else if (hit.score) {
             const rawSc = isReversed ? flipScore(hit.score) : hit.score;
             m.score = m.sport === 'Tennis' ? sanitizeTennisScore(rawSc, m.status) : rawSc;
           }
@@ -1806,7 +1930,7 @@ tr:last-child td{border:0}
 
       if (!silent) {
         say(updated > 0
-          ? `Đã cập nhật tỷ số & kết quả cho ${updated} trận.`
+          ? `Đã cập nhật lịch & tỷ số cho ${updated} trận.`
           : `Đã đồng bộ ${liveFeed.length} trận trực tuyến.`);
       }
     } catch (err) {
@@ -1969,7 +2093,7 @@ tr:last-child td{border:0}
 
     $('#clear').onclick = () => {
       if (confirm('Xóa toàn bộ vé và trận đấu đã lưu?')) {
-        db = { tickets: [], matches: [], proxy: db.proxy, autoSync: db.autoSync, lastSync: '' };
+        db = { tickets: [], matches: [], proxy: db.proxy, autoSync: db.autoSync, lastSync: '', v2TimeFixApplied: true };
         selected = null;
         persist();
         say('Đã xóa sạch dữ liệu.');
