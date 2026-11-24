@@ -257,7 +257,7 @@ tr:last-child td{border:0}
             <div class="quick">
               <button id="quickPaste">
                 <b>▤ &nbsp; Dán nguyên vé cược</b>
-                <small>Tự tách kèo, kéo tỷ số về và tự động chốt Thắng / Thua</small>
+                <small>Tự tách từng kèo trong xiên, kéo tỷ số về và tự chốt Thắng / Thua</small>
               </button>
               <button id="quickManual">
                 <b>⌕ &nbsp; Theo dõi cặp đấu</b>
@@ -336,8 +336,8 @@ tr:last-child td{border:0}
         <input class="field search" id="matchSearch" placeholder="Tìm tên đội, tay vợt, giải đấu...">
         <select class="field" id="sportFilter" style="max-width:165px">
           <option value="all">Tất cả các môn</option>
-          <option value="Tennis">🎾 Tennis</option>
           <option value="Bóng đá">⚽ Bóng đá</option>
+          <option value="Tennis">🎾 Tennis</option>
           <option value="Bóng rổ">🏀 Bóng rổ</option>
           <option value="Bóng chuyền">🏐 Bóng chuyền</option>
           <option value="Bóng bàn">🏓 Bóng bàn</option>
@@ -475,21 +475,21 @@ tr:last-child td{border:0}
 
       <div id="pastePane" style="margin-top:15px">
         <label class="muted" style="display:block;margin-bottom:6px">Nội dung vé cược</label>
-        <textarea id="raw" placeholder="Dán toàn bộ nội dung vé cược vào đây...&#10;&#10;Ví dụ:&#10;Lucia Bronzetti -vs- Alicia Herrero Linana&#10;Tài 20.5 @1.85"></textarea>
-        <p class="muted">Tự động phân biệt môn, kéo tỷ số về và tự chốt <b>Thắng / Thua / Hòa tiền</b> khi trận kết thúc.</p>
+        <textarea id="raw" placeholder="Dán toàn bộ nội dung vé cược vào đây...&#10;&#10;Ví dụ:&#10;Galatasaray (N) -vs- Aston Villa&#10;Cược Chấp Galatasaray (N) -0.5 @ 1.92&#10;&#10;Lucia Bronzetti -vs- Alicia Herrero Linana&#10;Tài 20.5 @1.85"></textarea>
+        <p class="muted">Tự động tách riêng từng trận trong xiên, phân biệt chuẩn Bóng đá / Tennis / Bóng rổ và tự chốt <b>Thắng / Thua</b>.</p>
         <button class="btn primary" id="parse">Phân tích vé</button>
         <div id="preview"></div>
       </div>
 
       <div id="manualPane" style="display:none;margin-top:15px">
         <div class="formgrid">
-          <div><label>Đội 1 / Tay vợt 1 *</label><input class="field" id="home" placeholder="VD: Lucia Bronzetti"></div>
-          <div><label>Đội 2 / Tay vợt 2 *</label><input class="field" id="away" placeholder="VD: Alicia Herrero Linana"></div>
+          <div><label>Đội 1 / Tay vợt 1 *</label><input class="field" id="home" placeholder="VD: Galatasaray"></div>
+          <div><label>Đội 2 / Tay vợt 2 *</label><input class="field" id="away" placeholder="VD: Aston Villa"></div>
           <div>
             <label>Môn thể thao</label>
             <select class="field" id="sport">
-              <option value="Tennis">🎾 Tennis</option>
               <option value="Bóng đá">⚽ Bóng đá</option>
+              <option value="Tennis">🎾 Tennis</option>
               <option value="Bóng rổ">🏀 Bóng rổ</option>
               <option value="Bóng chuyền">🏐 Bóng chuyền</option>
               <option value="Bóng bàn">🏓 Bóng bàn</option>
@@ -529,8 +529,8 @@ tr:last-child td{border:0}
         <div>
           <label>Môn thể thao</label>
           <select class="field" id="editSport">
-            <option value="Tennis">🎾 Tennis</option>
             <option value="Bóng đá">⚽ Bóng đá</option>
+            <option value="Tennis">🎾 Tennis</option>
             <option value="Bóng rổ">🏀 Bóng rổ</option>
             <option value="Bóng chuyền">🏐 Bóng chuyền</option>
             <option value="Bóng bàn">🏓 Bóng bàn</option>
@@ -687,11 +687,16 @@ tr:last-child td{border:0}
     $('#editModal').classList.remove('open');
   }
 
-  /* Smart Sport Detection */
-  const CLUB_KEYWORDS = /\b(fc|cf|sc|ac|fk|sk|afc|bc|club|team|united|city|real|sporting|atletico|deportivo|inter|dynamo|spartak|lokomotiv|cska|zenit|ajax|psv|feyenoord|benfica|porto|celtic|rangers|arsenal|chelsea|liverpool|everton|villa|albion|rovers|wanderers|hotspur|palace|forest|county|town|borussia|bayern|eintracht|werder|fortuna|hertha|union|olympique|racing|stade|juventus|milan|napoli|roma|lazio|atalanta|fiorentina|torino|bologna|udinese|genoa|parma|como|venezia|cagliari|empoli|lecce|monza|verona|sevilla|valencia|villarreal|betis|sociedad|osasuna|getafe|celta|mallorca|alaves|girona|rayo|espanyol|leganes|valladolid|las palmas|u19|u20|u21|u23|women|reserves)\b/;
+  /* =========================================================
+     ACCURATE SPORT DETECTION & TENNIS SCORE SANITIZER
+     ========================================================= */
+  const CLUB_KEYWORDS = /\b(fc|cf|sc|ac|fk|sk|afc|bc|club|team|united|city|real|sporting|atletico|deportivo|inter|dynamo|spartak|lokomotiv|cska|zenit|ajax|psv|feyenoord|benfica|porto|celtic|rangers|arsenal|chelsea|liverpool|everton|villa|albion|rovers|wanderers|hotspur|palace|forest|county|town|borussia|bayern|eintracht|werder|fortuna|hertha|union|olympique|racing|stade|juventus|milan|napoli|roma|lazio|atalanta|fiorentina|torino|bologna|udinese|genoa|parma|como|venezia|cagliari|empoli|lecce|monza|verona|sevilla|valencia|villarreal|betis|sociedad|osasuna|getafe|celta|mallorca|alaves|girona|rayo|espanyol|leganes|valladolid|las palmas|galatasaray|fenerbahce|besiktas|trabzonspor|shakhtar|slavia|sparta|plzen|salzburg|sturm|rapid|anderlecht|brugge|gent|genk|olympiacos|panathinaikos|paok|aek|dinamo|hajduk|partizan|crvena|ferencvaros|legia|lech|rosenborg|bodo|molde|malmo|djurgarden|aik|hammarby|copenhagen|midtjylland|brondby|young boys|basel|zurich|servette|lugano|u17|u18|u19|u20|u21|u23|women|reserves)\b/;
+
+  const FOOTBALL_LEAGUE_KEYWORDS = /\b(bong da|soccer|football|uefa|youth league|champions league|europa|conference league|premier league|la liga|serie a|serie b|bundesliga|ligue 1|ligue 2|eredivisie|primeira liga|super lig|world cup|euro|copa|afc|v league|j league|k league|fa cup|carabao|efl|mls|hiep 1|hiep 2|phat goc|corner|the phat|1x2)\b/;
 
   function looksLikePersonPair(home, away) {
     if (!home || !away) return false;
+    if (/\([Nn]\)/.test(home) || /\([Nn]\)/.test(away)) return false; // Neutral venue tag = team sport
     const hNorm = norm(home);
     const aNorm = norm(away);
     if (CLUB_KEYWORDS.test(hNorm) || CLUB_KEYWORDS.test(aNorm)) return false;
@@ -702,8 +707,14 @@ tr:last-child td{border:0}
   }
 
   function detectSport(text, home = '', away = '') {
-    const t = norm(text);
-    if (/\b(tennis|quan vot|atp|wta|itf|challenger|wimbledon|roland garros|us open|australian open|set \d|game)\b/.test(t)) return 'Tennis';
+    const t = norm(`${text} ${home} ${away}`);
+
+    // 1. Explicit Football checks FIRST so team/UEFA matches are never mislabeled as Tennis
+    if (FOOTBALL_LEAGUE_KEYWORDS.test(t) || CLUB_KEYWORDS.test(norm(`${home} ${away}`)) || /\([Nn]\)/.test(`${home} ${away}`)) {
+      return 'Bóng đá';
+    }
+
+    // 2. Explicit Other Sports
     if (/\b(table tennis|ping pong|bong ban|ittf|wtt|setka|tt cup)\b/.test(t)) return 'Bóng bàn';
     if (/\b(badminton|cau long|bwf)\b/.test(t)) return 'Cầu lông';
     if (/\b(nba|ncaa|wnba|cba|euroleague|bong ro|basketball|quarter)\b/.test(t)) return 'Bóng rổ';
@@ -714,6 +725,12 @@ tr:last-child td{border:0}
     if (/\b(ufc|mma|boxing|quyen anh|bellator|one championship)\b/.test(t)) return 'MMA / Võ thuật';
     if (/\b(esports|lol|league of legends|dota|cs2|csgo|valorant|lck|lpl|esoccer|e soccer)\b/.test(t)) return 'Esports';
 
+    // 3. Explicit Tennis keywords (removed overly broad "game" keyword)
+    if (/\b(tennis|quan vot|atp|wta|itf|challenger|wimbledon|roland garros|us open|australian open|grand slam|davis cup|billie jean)\b/.test(t)) {
+      return 'Tennis';
+    }
+
+    // 4. Heuristic: Over/Under line 15.5–42.5 + 2 person names => Tennis
     const ouMatch = text.match(/(?:tài|xỉu|trên|dưới|over|under)\s*[+-]?\s*(\d{1,3}(?:\.\d+)?)/i);
     const ouVal = ouMatch ? parseFloat(ouMatch[1]) : NaN;
     const isCornerOrCard = /corner|phạt góc|thẻ|card/i.test(text);
@@ -724,21 +741,63 @@ tr:last-child td{border:0}
     return 'Bóng đá';
   }
 
-  function migrateExistingMatches() {
+  /* Strip stray trailing set-tally ("2-0" / "0-2") from 2-set finished Tennis scores like "6-4, 6-3, 2-0" */
+  function sanitizeTennisScore(scoreStr, status = 'finished') {
+    if (!scoreStr) return '';
+    const parts = String(scoreStr).split(',').map(p => p.trim()).filter(Boolean);
+    if (parts.length === 3) {
+      const m1 = parts[0].match(/^(\d+)(?:\(\d+\))?\s*[-:]\s*(\d+)(?:\(\d+\))?$/);
+      const m2 = parts[1].match(/^(\d+)(?:\(\d+\))?\s*[-:]\s*(\d+)(?:\(\d+\))?$/);
+      const m3 = parts[2].match(/^(\d+)\s*[-:]\s*(\d+)$/);
+      if (m1 && m2 && m3) {
+        const s1h = parseInt(m1[1], 10), s1a = parseInt(m1[2], 10);
+        const s2h = parseInt(m2[1], 10), s2a = parseInt(m2[2], 10);
+        const s3h = parseInt(m3[1], 10), s3a = parseInt(m3[2], 10);
+        const hSets = (s1h > s1a ? 1 : 0) + (s2h > s2a ? 1 : 0);
+        const aSets = (s1a > s1h ? 1 : 0) + (s2a > s2h ? 1 : 0);
+        // If one player already won 2-0 in sets, a 3rd set doesn't exist; or if finished, 2-0/0-2 cannot be a completed 3rd set
+        if ((hSets === 2 && s3h === 2 && s3a === 0) || (aSets === 2 && s3h === 0 && s3a === 2) ||
+            (status === 'finished' && ((s3h === 2 && s3a === 0) || (s3h === 0 && s3a === 2)))) {
+          return `${parts[0]}, ${parts[1]}`;
+        }
+      }
+    }
+    return parts.join(', ');
+  }
+
+  /* Auto-repair existing saved data in localStorage on load */
+  function repairSavedData() {
     let changed = false;
+
     db.matches.forEach(m => {
-      if (m.sport === 'Bóng đá' && !m.league && looksLikePersonPair(m.home, m.away)) {
-        const linkedPick = db.tickets
-          .flatMap(t => t.entries)
-          .find(e => matchKey(e) === matchKey(m));
-        const contextStr = linkedPick ? `${linkedPick.market} ${linkedPick.pick}` : '';
-        if (detectSport(contextStr, m.home, m.away) === 'Tennis') {
-          m.sport = 'Tennis';
-          if (linkedPick) linkedPick.sport = 'Tennis';
+      // Fix football matches that were previously misclassified as Tennis
+      if (m.sport === 'Tennis') {
+        const checkStr = `${m.league || ''} ${m.home || ''} ${m.away || ''}`;
+        if (FOOTBALL_LEAGUE_KEYWORDS.test(norm(checkStr)) || CLUB_KEYWORDS.test(norm(checkStr)) || /\([Nn]\)/.test(checkStr)) {
+          m.sport = 'Bóng đá';
+          changed = true;
+        }
+      }
+      // Fix trailing 2-0 set summary appended to Tennis scores (e.g. "6-4, 6-3, 2-0" -> "6-4, 6-3")
+      if (m.sport === 'Tennis' && m.score) {
+        const fixedScore = sanitizeTennisScore(m.score, m.status);
+        if (fixedScore !== m.score) {
+          m.score = fixedScore;
           changed = true;
         }
       }
     });
+
+    db.tickets.forEach(t => {
+      t.entries.forEach(e => {
+        const linked = db.matches.find(m => matchKey(m) === matchKey(e));
+        if (linked && linked.sport && e.sport !== linked.sport) {
+          e.sport = linked.sport;
+          changed = true;
+        }
+      });
+    });
+
     if (changed) localStorage.setItem(KEY, JSON.stringify(db));
   }
 
@@ -786,20 +845,30 @@ tr:last-child td{border:0}
     const odds = (raw.match(/(?:Odds|Tổng\s*odds|Tỷ\s*lệ)\s*:\s*([\d.,]+)/i) || [])[1] || '';
     const stake = (raw.match(/(?:Tiền\s*Cược|Stake|Cược)\s*:\s*([\d.,]+)/i) || [])[1] || '';
 
+    // Pre-scan all match line indices so each leg's context is strictly bounded before the next leg
+    const matchLocations = [];
+    lines.forEach((line, idx) => {
+      const pair = teamPair(line);
+      if (pair) matchLocations.push({ idx, pair });
+    });
+
     const entries = [];
     const seen = new Set();
 
-    lines.forEach((line, i) => {
-      const pair = teamPair(line);
-      if (!pair) return;
+    matchLocations.forEach((loc, mIdx) => {
+      const { idx: i, pair } = loc;
       const k = norm(pair.home) + '|' + norm(pair.away);
       if (seen.has(k)) return;
       seen.add(k);
 
-      const prevLines = lines.slice(Math.max(0, i - 3), i);
-      const nextLines = lines.slice(i, Math.min(i + 8, lines.length));
-      const fullContext = [...prevLines, ...nextLines].join(' ');
-      const { status, score } = detectStatusAndScore(nextLines.join(' '));
+      const prevStart = mIdx > 0 ? Math.max(matchLocations[mIdx - 1].idx + 1, i - 2) : Math.max(0, i - 2);
+      const nextEnd = mIdx + 1 < matchLocations.length ? matchLocations[mIdx + 1].idx : lines.length;
+
+      const prevLines = lines.slice(prevStart, i);
+      const legLines = lines.slice(i + 1, nextEnd);
+      const fullContext = [...prevLines, lines[i], ...legLines].join(' ');
+
+      const { status, score } = detectStatusAndScore(legLines.join(' '));
       const sport = detectSport(fullContext, pair.home, pair.away);
 
       const market = /corner|phạt góc/i.test(fullContext) ? 'Phạt góc'
@@ -810,19 +879,46 @@ tr:last-child td{border:0}
         : /1x2|thắng hòa thua|moneyline/i.test(fullContext) ? 'Thắng/Thua'
         : 'Toàn trận';
 
-      const pickLine = lines.slice(i + 1, i + 7).find(x => /@\s*\d/.test(x)) || '';
-      const price = (pickLine.match(/@\s*(\d+(?:\.\d+)?)/) || [])[1] || '';
-      const handicap = (pickLine.match(/([+-]?\d+(?:\.\d+)?(?:\/\d+(?:\.\d+)?)?)/) || [])[1] || '';
-      const pick = pickLine
-        .replace(/[*]/g, '')
-        .replace(/Đang chạy/ig, '')
-        .replace(/@\s*\d+(?:\.\d+)?/, '')
-        .trim();
+      // Extract odds and selection across single-line OR multi-line W88/CMD layouts
+      let price = '';
+      let pick = '';
+      const oddsLineIdx = legLines.findIndex(x => /@\s*\d/.test(x) || /^[1-9]\d*\.\d{2,3}$/.test(x));
+
+      if (oddsLineIdx !== -1) {
+        const oLine = legLines[oddsLineIdx];
+        const atMatch = oLine.match(/@\s*(\d+(?:\.\d+)?)/) || oLine.match(/^([1-9]\d*\.\d{2,3})$/);
+        price = atMatch ? atMatch[1] : '';
+        let inlinePick = oLine
+          .replace(/[*]/g, '')
+          .replace(/Đang chạy/ig, '')
+          .replace(/@\s*\d+(?:\.\d+)?/, '')
+          .replace(/^[1-9]\d*\.\d{2,3}$/, '')
+          .trim();
+
+        // If selection is on the line(s) right before @odds
+        if (!inlinePick && oddsLineIdx > 0) {
+          const candidateLines = legLines.slice(0, oddsLineIdx).filter(x =>
+            !/^(cược chấp|hiệp 1|tài\/xỉu|1x2|toàn trận|đang chạy|\d{1,2}\/\d{1,2}|\d{1,2}:\d{2})$/i.test(x)
+          );
+          inlinePick = candidateLines.join(' ').replace(/[*]/g, '').trim();
+        }
+        pick = inlinePick;
+      } else {
+        // Fallback: pick without '@'
+        const fallbackLine = legLines.find(x =>
+          /(?:tài|xỉu|over|under|[+-]\d+(?:\.\d+)?)/i.test(x) ||
+          isSameParticipant(x, pair.home) ||
+          isSameParticipant(x, pair.away)
+        ) || '';
+        pick = fallbackLine.replace(/[*]/g, '').trim();
+      }
+
+      const handicap = (pick.match(/([+-]?\d+(?:\.\d+)?(?:\/\d+(?:\.\d+)?)?)/) || [])[1] || '';
 
       const league = [...prevLines].reverse()
         .find(x => /league|championship|serie|premier|uefa|national|cup|liga|nba|ncaa|bundesliga|ligue|atp|wta|itf|challenger|open|nhl|nfl|mlb|ufc|v-league/i.test(x)) || '';
 
-      const time = (nextLines.join(' ').match(/\b(?:\d{1,2}\/\d{1,2}\s+)?\d{1,2}:\d{2}\b/) || [])[0] || '';
+      const time = (legLines.join(' ').match(/\b(?:\d{1,2}\/\d{1,2}\s+)?\d{1,2}:\d{2}\b/) || [])[0] || '';
 
       entries.push({
         id: uid(),
@@ -835,7 +931,7 @@ tr:last-child td{border:0}
         price,
         time,
         status,
-        score
+        score: sport === 'Tennis' ? sanitizeTennisScore(score, status) : score
       });
     });
 
@@ -911,16 +1007,16 @@ tr:last-child td{border:0}
   };
 
   function gradeEntry(entry, match) {
-    const parsed = parseScoreBreakdown(match.score);
+    const sp = match.sport || entry.sport || 'Bóng đá';
+    const cleanScore = sp === 'Tennis' ? sanitizeTennisScore(match.score, match.status) : match.score;
+    const parsed = parseScoreBreakdown(cleanScore);
     if (!parsed) return { outcome: null, liveStat: '' };
 
-    const sp = match.sport || entry.sport || 'Bóng đá';
     const isSetSport = ['Tennis', 'Bóng chuyền', 'Bóng bàn', 'Cầu lông'].includes(sp);
     const pickRaw = String(entry.pick || '').trim();
     const pickNorm = norm(pickRaw);
     const marketNorm = norm(`${entry.market || ''} ${pickRaw}`);
 
-    // Live stat helper (e.g., total games or goals so far)
     const unitLabel = sp === 'Tennis' ? 'game' : sp === 'Bóng rổ' ? 'điểm' : isSetSport ? 'điểm' : 'bàn';
     const liveStat = `Tổng: ${parsed.totalSum} ${unitLabel}`;
 
@@ -928,8 +1024,8 @@ tr:last-child td{border:0}
       return { outcome: null, liveStat };
     }
 
-    // Ignore corner/card markets since scoreboard only provides match goals/games
-    if (/corner|phat goc|the|card/.test(marketNorm)) {
+    // Do not auto-grade 1st-half or corners/cards from Full-Time goals
+    if (/corner|phat goc|the|card|hiep 1|\b1h\b|\bht\b/.test(marketNorm)) {
       return { outcome: null, liveStat };
     }
 
@@ -951,7 +1047,10 @@ tr:last-child td{border:0}
     if (/cuoc chap|handicap|hdp/.test(marketNorm) || hdpMatch) {
       const line = parseAsianLine(hdpMatch ? hdpMatch[1] : entry.handicap);
       if (!isNaN(line)) {
-        const cleanTeam = pickRaw.replace(/([+-]?\d+(?:\.\d+)?(?:\s*\/\s*[+-]?\d+(?:\.\d+)?)?)/g, '').trim();
+        const cleanTeam = pickRaw
+          .replace(/\([Nn]\)/g, '')
+          .replace(/([+-]?\d+(?:\.\d+)?(?:\s*\/\s*[+-]?\d+(?:\.\d+)?)?)/g, '')
+          .trim();
         let pickedHome = null;
         if (cleanTeam) {
           if (isSameParticipant(cleanTeam, match.home) || /\b(chu|home|1)\b/.test(norm(cleanTeam))) pickedHome = true;
@@ -993,7 +1092,6 @@ tr:last-child td{border:0}
       return { entry: e, match: m, outcome };
     });
 
-    // In a parlay or single, if any leg is definitively lost, the ticket is lost immediately
     if (legResults.some(r => r.outcome === 'lost')) {
       return { state: 'lost', actualPayout: '0.00' };
     }
@@ -1003,7 +1101,6 @@ tr:last-child td{border:0}
       return { state: 'open', actualPayout: '' };
     }
 
-    // All matches are finished and none is 'lost'
     const allGraded = legResults.every(r => r.outcome !== null);
     if (!allGraded) {
       return { state: 'settled_unknown', actualPayout: '' };
@@ -1027,7 +1124,6 @@ tr:last-child td{border:0}
       };
     }
 
-    // Fallback to ticket total odds if single leg or standard full win
     const ticketOdds = parseFloat(String(t.odds || '').replace(/,/g, ''));
     const allFullWon = legResults.every(r => r.outcome === 'won');
     const finalOdds = (allFullWon && !isNaN(ticketOdds) && ticketOdds > 0) ? ticketOdds : effectiveOdds;
@@ -1129,7 +1225,8 @@ tr:last-child td{border:0}
       ${t.entries.map(e => {
         const m = matchFor(e);
         const sp = m.sport || e.sport || 'Bóng đá';
-        const displayScore = m.score || (m.status === 'scheduled' ? 'VS' : '0-0');
+        const cleanScore = sp === 'Tennis' ? sanitizeTennisScore(m.score, m.status) : m.score;
+        const displayScore = cleanScore || (m.status === 'scheduled' ? 'VS' : '0-0');
         const { outcome, liveStat } = gradeEntry(e, m);
 
         const outcomeBadge = outcome
@@ -1213,7 +1310,8 @@ tr:last-child td{border:0}
     $('#matchCount').textContent = filtered.length + ' trận';
     $('#matchRows').innerHTML = filtered.map(m => {
       const sp = m.sport || 'Bóng đá';
-      const displayScore = m.score || (m.status === 'scheduled' ? '—' : '0-0');
+      const cleanScore = sp === 'Tennis' ? sanitizeTennisScore(m.score, m.status) : m.score;
+      const displayScore = cleanScore || (m.status === 'scheduled' ? '—' : '0-0');
       return `
         <tr>
           <td>
@@ -1308,7 +1406,7 @@ tr:last-child td{border:0}
       id: uid(),
       home,
       away,
-      sport: $('#sport').value || 'Tennis',
+      sport: $('#sport').value || 'Bóng đá',
       league: $('#league').value.trim(),
       time: '',
       status: 'scheduled',
@@ -1324,17 +1422,17 @@ tr:last-child td{border:0}
   }
 
   /* Smart Multi-Source Auto Livescore Engine */
-  const NOISE_WORDS = new Set(['fc', 'cf', 'sc', 'ac', 'fk', 'sk', 'afc', 'bc', 'club', 'team', 'united', 'city', 'real', 'sporting', 'atletico', 'deportivo', 'cd', 'ca', 'as', 'us', 'ss', 'vfb', 'tsg', 'rb', 'ik', 'bk', 'if']);
+  const NOISE_WORDS = new Set(['fc', 'cf', 'sc', 'ac', 'fk', 'sk', 'afc', 'bc', 'club', 'team', 'united', 'city', 'real', 'sporting', 'atletico', 'deportivo', 'cd', 'ca', 'as', 'us', 'ss', 'vfb', 'tsg', 'rb', 'ik', 'bk', 'if', 'n']);
 
   function significantTokens(name) {
-    return norm(name)
+    return norm(String(name || '').replace(/\([Nn]\)/g, ''))
       .split(' ')
       .filter(w => w.length >= 3 && !NOISE_WORDS.has(w));
   }
 
   function isSameParticipant(userInput, apiName) {
-    const a = norm(userInput);
-    const b = norm(apiName);
+    const a = norm(String(userInput || '').replace(/\([Nn]\)/g, ''));
+    const b = norm(String(apiName || '').replace(/\([Nn]\)/g, ''));
     if (!a || !b) return false;
     if (a === b) return true;
     if (a.length >= 4 && b.length >= 4 && (a.includes(b) || b.includes(a))) return true;
@@ -1382,8 +1480,8 @@ tr:last-child td{border:0}
 
   async function fetch365ScoresFeeds(dates) {
     const sports = [
-      { id: 3, label: 'Tennis' },
       { id: 1, label: 'Bóng đá' },
+      { id: 3, label: 'Tennis' },
       { id: 2, label: 'Bóng rổ' },
       { id: 11, label: 'Bóng bàn' },
       { id: 5, label: 'Bóng chuyền' },
@@ -1427,14 +1525,20 @@ tr:last-child td{border:0}
 
         let score = '';
         if (sportId === 3 || sportId === 11 || sportId === 5 || sportId === 12) {
+          // Match ONLY individual numbered sets ("1st Set", "2nd Set", "Set 1"...), NEVER summary stage "Sets" (2-0)
           const setStages = Array.isArray(g.stages)
-            ? g.stages.filter(st => /set/i.test(st.name || '') && st.homeCompetitorScore >= 0 && st.awayCompetitorScore >= 0)
+            ? g.stages.filter(st => {
+                const nm = String(st.name || '').trim();
+                const isSingleSet = /^(?:1st|2nd|3rd|4th|5th|\d+(?:st|nd|rd|th)?)\s*set$/i.test(nm) || /^set\s*\d+$/i.test(nm);
+                return isSingleSet && st.homeCompetitorScore >= 0 && st.awayCompetitorScore >= 0;
+              })
             : [];
           if (setStages.length) {
             score = setStages.map(st => `${st.homeCompetitorScore}-${st.awayCompetitorScore}`).join(', ');
           } else if (hc.score >= 0 && ac.score >= 0) {
             score = `${hc.score}-${ac.score}`;
           }
+          if (sportId === 3) score = sanitizeTennisScore(score, status);
         } else if (hc.score >= 0 && ac.score >= 0) {
           score = `${hc.score}-${ac.score}`;
         }
@@ -1485,7 +1589,8 @@ tr:last-child td{border:0}
 
     const statusObj = comp.status || fallbackEvent?.status || {};
     const state = statusObj.type?.state;
-    const score = sportLabel === 'Tennis'
+    const status = state === 'in' ? 'live' : state === 'post' ? 'finished' : 'scheduled';
+    const rawScore = sportLabel === 'Tennis'
       ? formatTennisScore(c1, c2)
       : `${c1.score ?? 0}-${c2.score ?? 0}`;
 
@@ -1494,8 +1599,8 @@ tr:last-child td{border:0}
       away,
       sport: sportLabel,
       league: fallbackEvent?.season?.slug || comp?.league?.abbreviation || '',
-      score,
-      status: state === 'in' ? 'live' : state === 'post' ? 'finished' : 'scheduled',
+      score: sportLabel === 'Tennis' ? sanitizeTennisScore(rawScore, status) : rawScore,
+      status,
       detail: statusObj.type?.shortDetail || ''
     };
   }
@@ -1667,9 +1772,13 @@ tr:last-child td{border:0}
           (isSameParticipant(m.home, f.home) && isSameParticipant(m.away, f.away)) ||
           (isSameParticipant(m.home, f.away) && isSameParticipant(m.away, f.home))
         );
-        const hit = candidates.find(c => c.status === 'live')
-          || candidates.find(c => c.status === 'finished')
-          || candidates[0];
+        // Prefer candidate matching current sport first, then live/finished status
+        const sameSportCandidates = candidates.filter(c => c.sport === m.sport);
+        const pool = sameSportCandidates.length ? sameSportCandidates : candidates;
+
+        const hit = pool.find(c => c.status === 'live')
+          || pool.find(c => c.status === 'finished')
+          || pool[0];
 
         if (hit) {
           const prevScore = m.score;
@@ -1677,17 +1786,20 @@ tr:last-child td{border:0}
           const isReversed = !(isSameParticipant(m.home, hit.home) && isSameParticipant(m.away, hit.away));
 
           if (hit.status) m.status = hit.status;
-          if (hit.score && hit.status !== 'scheduled') {
-            m.score = isReversed ? flipScore(hit.score) : hit.score;
-          }
-          if (hit.detail) m.time = hit.detail;
           if (hit.league) m.league = hit.league;
           if (hit.sport) m.sport = hit.sport;
+          if (hit.detail) m.time = hit.detail;
+
+          if (hit.score && hit.status !== 'scheduled') {
+            const rawSc = isReversed ? flipScore(hit.score) : hit.score;
+            m.score = m.sport === 'Tennis' ? sanitizeTennisScore(rawSc, m.status) : rawSc;
+          }
 
           if (m.score !== prevScore || m.status !== prevStatus) updated++;
         }
       });
 
+      repairSavedData();
       const now = new Date();
       db.lastSync = now.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
       persist();
@@ -1808,9 +1920,10 @@ tr:last-child td{border:0}
       if (!m) return;
       m.home = $('#editHome').value.trim() || m.home;
       m.away = $('#editAway').value.trim() || m.away;
-      m.sport = $('#editSport').value || 'Tennis';
+      m.sport = $('#editSport').value || 'Bóng đá';
       m.status = $('#editStatus').value;
       m.score = $('#editScore').value.trim();
+      repairSavedData();
       persist();
       closeEditModal();
       syncLivescore(false);
@@ -1843,7 +1956,7 @@ tr:last-child td{border:0}
           const d = JSON.parse(r.result);
           if (!Array.isArray(d.tickets) || !Array.isArray(d.matches)) throw 0;
           db = { ...db, ...d };
-          migrateExistingMatches();
+          repairSavedData();
           persist();
           say('Đã nhập dữ liệu. Đang đồng bộ tỷ số...');
           syncLivescore(false);
@@ -1873,7 +1986,7 @@ tr:last-child td{border:0}
     };
   }
 
-  migrateExistingMatches();
+  repairSavedData();
   bind();
   render();
   setupAutoSync();
