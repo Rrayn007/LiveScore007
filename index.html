@@ -163,7 +163,6 @@ tr:last-child td{border:0}
 }
 @media(max-width:680px){
   .top{height:58px;padding:0 14px}
-  .live-badge span.hide-sm{display:none}
   .shell{display:block}
   aside{display:none}
   main{padding:18px 13px 84px}
@@ -208,7 +207,7 @@ tr:last-child td{border:0}
       <button data-page="settings">⚙ &nbsp; Cài đặt</button>
     </nav>
     <div class="aside-note" id="syncStatusNote">
-      Đang bật chế độ tự động lấy tỷ số đa môn mỗi 30 giây.
+      Đang bật tự động lấy tỷ số đa môn (gồm cả ATP Challenger & ITF) mỗi 30 giây.
     </div>
   </aside>
 
@@ -250,19 +249,19 @@ tr:last-child td{border:0}
             <div class="quick">
               <button id="quickPaste">
                 <b>▤ &nbsp; Dán nguyên vé cược</b>
-                <small>Tự tách trận và lập tức kéo tỷ số trực tiếp về</small>
+                <small>Tự nhận diện môn (cả Tennis không ghi tên giải) và kéo tỷ số về</small>
               </button>
               <button id="quickManual">
                 <b>⌕ &nbsp; Theo dõi cặp đấu</b>
-                <small>Chỉ cần nhập tên 2 đội / tay vợt, tỷ số tự động cập nhật</small>
+                <small>Nhập tên 2 đội / tay vợt, tỷ số tự động cập nhật</small>
               </button>
               <button data-goto="matches">
                 <b>◷ &nbsp; Bảng tỷ số trực tiếp</b>
-                <small>Xem tiến độ, phút thi đấu, set đấu và tỷ số các môn</small>
+                <small>Xem tỷ số từng set, phút thi đấu và trạng thái tất cả các môn</small>
               </button>
             </div>
             <div class="notice info">
-              Hệ thống tự động quét tỷ số <b>hôm qua + hôm nay</b> trên các nguồn thể thao quốc tế (Bóng đá, Bóng rổ, Tennis, Bóng chuyền, Bóng bàn, Cầu lông, NHL, NFL, MLB, UFC, Esports) mỗi 30 giây.
+              Hỗ trợ quét tự động cả giải lớn lẫn giải nhỏ: <b>ATP/WTA/Challenger/ITF</b>, Bóng đá các giải, Bóng rổ, Bóng chuyền, Bóng bàn (TT Cup/Setka), Cầu lông, NHL, NFL, MLB, UFC, Esports.
             </div>
           </div>
         </div>
@@ -275,7 +274,7 @@ tr:last-child td{border:0}
         <div>
           <div class="eyebrow">Your Slips</div>
           <h1>Vé cược</h1>
-          <div class="sub">Tỷ số từng trận trong vé tự động nhảy khi trận diễn ra.</div>
+          <div class="sub">Tỷ số từng trận trong vé tự động nhảy khi trận diễn ra hoặc kết thúc.</div>
         </div>
         <button class="btn primary" id="addTickets">＋ Thêm vé</button>
       </div>
@@ -318,7 +317,7 @@ tr:last-child td{border:0}
         <div>
           <div class="eyebrow">Live Scoreboard</div>
           <h1>Bảng tỷ số trực tiếp</h1>
-          <div class="sub">Tự động cập nhật tỷ số và trạng thái từ nguồn dữ liệu đa môn.</div>
+          <div class="sub">Tự động cập nhật tỷ số, tên giải và trạng thái từ nguồn dữ liệu đa môn.</div>
         </div>
         <button class="btn primary" id="addMatch">＋ Theo dõi trận</button>
       </div>
@@ -417,19 +416,19 @@ tr:last-child td{border:0}
         <div class="panel">
           <div class="panel-head">
             <b class="panel-title">Cấu hình Auto Livescore</b>
-            <span class="pill live"><span class="dot"></span> Đa nguồn đang hoạt động</span>
+            <span class="pill live"><span class="dot"></span> 3 nguồn đang hoạt động</span>
           </div>
           <div class="panel-body">
             <label style="display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;margin-bottom:12px;cursor:pointer">
               <input type="checkbox" id="autoSync" checked> Tự động cập nhật tỷ số mỗi 30 giây
             </label>
-            <label class="muted" style="display:block;font-weight:700;margin-bottom:6px">URL Proxy riêng (Tùy chọn cho giải cỏ / Challenger / ITF)</label>
+            <label class="muted" style="display:block;font-weight:700;margin-bottom:6px">URL Proxy riêng (Tùy chọn bổ sung)</label>
             <input class="field" id="proxy" placeholder="https://your-app.vercel.app/api/fixtures">
             <div style="margin-top:10px">
               <button class="btn primary" id="saveProxy">Lưu cấu hình</button>
             </div>
             <div class="notice info">
-              Mặc định app tự động lấy tỷ số từ <b>ESPN + TheSportsDB</b> (không cần API key). Nếu bạn có thêm Proxy riêng (Vercel / Google Apps Script), hệ thống sẽ gộp thêm dữ liệu từ proxy đó.
+              App tự động gộp dữ liệu từ <b>365Scores + ESPN + TheSportsDB</b> (không cần API key), bao phủ cả <b>ATP Challenger, ITF, Bóng bàn, Bóng chuyền, Cầu lông, Bóng đá, Bóng rổ, Esports</b>.
             </div>
           </div>
         </div>
@@ -466,22 +465,22 @@ tr:last-child td{border:0}
 
       <div id="pastePane" style="margin-top:15px">
         <label class="muted" style="display:block;margin-bottom:6px">Nội dung vé cược</label>
-        <textarea id="raw" placeholder="Dán toàn bộ nội dung vé cược vào đây...&#10;&#10;Ví dụ:&#10;Odds: 14.50&#10;Tiền Cược: 100.00&#10;số: PAR18855315746&#10;&#10;Premier League&#10;Arsenal -vs- Chelsea&#10;Tài 2.5 @1.85&#10;&#10;NBA&#10;Los Angeles Lakers -vs- Boston Celtics&#10;Tài 224.5 @1.90"></textarea>
-        <p class="muted">Sau khi bấm Lưu vé, hệ thống sẽ tự động tra cứu và cập nhật tỷ số ngay lập tức.</p>
+        <textarea id="raw" placeholder="Dán toàn bộ nội dung vé cược vào đây...&#10;&#10;Ví dụ:&#10;Max Alcala Gurri -vs- Gonzalo Villanueva&#10;Tài 20.5 @1.72&#10;&#10;Andrey Chepelev -vs- Eduardo Ribeiro&#10;Tài 20.5 @1.76"></textarea>
+        <p class="muted">Tự động phân biệt Tennis, Bóng đá, Bóng rổ, Bóng bàn... kể cả khi vé không ghi tên giải đấu.</p>
         <button class="btn primary" id="parse">Phân tích vé</button>
         <div id="preview"></div>
       </div>
 
       <div id="manualPane" style="display:none;margin-top:15px">
         <div class="formgrid">
-          <div><label>Đội 1 / Tay vợt 1 *</label><input class="field" id="home" placeholder="VD: Real Madrid hoặc Jannik Sinner"></div>
-          <div><label>Đội 2 / Tay vợt 2 *</label><input class="field" id="away" placeholder="VD: Liverpool hoặc Carlos Alcaraz"></div>
+          <div><label>Đội 1 / Tay vợt 1 *</label><input class="field" id="home" placeholder="VD: Max Alcala Gurri"></div>
+          <div><label>Đội 2 / Tay vợt 2 *</label><input class="field" id="away" placeholder="VD: Gonzalo Villanueva"></div>
           <div>
             <label>Môn thể thao</label>
             <select class="field" id="sport">
+              <option value="Tennis">🎾 Tennis</option>
               <option value="Bóng đá">⚽ Bóng đá</option>
               <option value="Bóng rổ">🏀 Bóng rổ</option>
-              <option value="Tennis">🎾 Tennis</option>
               <option value="Bóng chuyền">🏐 Bóng chuyền</option>
               <option value="Bóng bàn">🏓 Bóng bàn</option>
               <option value="Cầu lông">🏸 Cầu lông</option>
@@ -493,22 +492,22 @@ tr:last-child td{border:0}
               <option value="Khác">🏅 Môn khác</option>
             </select>
           </div>
-          <div><label>Giải đấu (tùy chọn)</label><input class="field" id="league" placeholder="Tự động nhận diện khi đồng bộ"></div>
+          <div><label>Giải đấu (tùy chọn)</label><input class="field" id="league" placeholder="Tự động điền khi đồng bộ"></div>
         </div>
-        <div class="notice info">Bạn không cần nhập tỷ số hay trạng thái. Hệ thống sẽ tự động lấy tỷ số thực tế ngay sau khi thêm.</div>
+        <div class="notice info">Không cần nhập tỷ số. Hệ thống sẽ tự động tra cứu và đổ tỷ số về ngay sau khi thêm.</div>
         <button class="btn primary" id="saveManual" style="margin-top:12px">Bắt đầu theo dõi tự động</button>
       </div>
     </div>
   </div>
 </div>
 
-<!-- EMERGENCY MANUAL OVERRIDE MODAL (ONLY IF NEEDED FOR OBSCURE MATCHES) -->
+<!-- EDIT MATCH MODAL -->
 <div class="modalback" id="editModal">
   <div class="modal" style="width:min(460px,100%)">
     <div class="modal-head">
       <div>
         <b>Chỉnh sửa thông tin trận</b>
-        <div class="muted">Dùng khi tên đội viết tắt khác chuẩn nên chưa tự khớp</div>
+        <div class="muted">Dùng nếu cần sửa tên viết tắt hoặc chuyển môn</div>
       </div>
       <button class="btn btn-sm" data-close-edit>✕</button>
     </div>
@@ -520,9 +519,9 @@ tr:last-child td{border:0}
         <div>
           <label>Môn thể thao</label>
           <select class="field" id="editSport">
+            <option value="Tennis">🎾 Tennis</option>
             <option value="Bóng đá">⚽ Bóng đá</option>
             <option value="Bóng rổ">🏀 Bóng rổ</option>
-            <option value="Tennis">🎾 Tennis</option>
             <option value="Bóng chuyền">🏐 Bóng chuyền</option>
             <option value="Bóng bàn">🏓 Bóng bàn</option>
             <option value="Cầu lông">🏸 Cầu lông</option>
@@ -542,7 +541,7 @@ tr:last-child td{border:0}
             <option value="finished">Đã kết thúc</option>
           </select>
         </div>
-        <div class="full"><label>Tỷ số</label><input class="field" id="editScore" placeholder="Tự động cập nhật khi khớp tên"></div>
+        <div class="full"><label>Tỷ số</label><input class="field" id="editScore" placeholder="Tự động cập nhật khi đồng bộ"></div>
       </div>
     </div>
     <div class="modal-foot">
@@ -678,20 +677,62 @@ tr:last-child td{border:0}
     $('#editModal').classList.remove('open');
   }
 
-  /* Sport & Ticket Parsing */
-  function detectSport(text) {
+  /* Smart Sport Detection (Handles Slips Without Tournament Headers) */
+  const CLUB_KEYWORDS = /\b(fc|cf|sc|ac|fk|sk|afc|bc|club|team|united|city|real|sporting|atletico|deportivo|inter|dynamo|spartak|lokomotiv|cska|zenit|ajax|psv|feyenoord|benfica|porto|celtic|rangers|arsenal|chelsea|liverpool|everton|villa|albion|rovers|wanderers|hotspur|palace|forest|county|town|borussia|bayern|eintracht|werder|fortuna|hertha|union|olympique|racing|stade|juventus|milan|napoli|roma|lazio|atalanta|fiorentina|torino|bologna|udinese|genoa|parma|como|venezia|cagliari|empoli|lecce|monza|verona|sevilla|valencia|villarreal|betis|sociedad|osasuna|getafe|celta|mallorca|alaves|girona|rayo|espanyol|leganes|valladolid|las palmas|u19|u20|u21|u23|women|reserves)\b/;
+
+  function looksLikePersonPair(home, away) {
+    if (!home || !away) return false;
+    const hNorm = norm(home);
+    const aNorm = norm(away);
+    if (CLUB_KEYWORDS.test(hNorm) || CLUB_KEYWORDS.test(aNorm)) return false;
+    if (/\d/.test(hNorm) || /\d/.test(aNorm)) return false;
+    const hWords = hNorm.split(' ').filter(Boolean);
+    const aWords = aNorm.split(' ').filter(Boolean);
+    return hWords.length >= 2 && hWords.length <= 4 && aWords.length >= 2 && aWords.length <= 4;
+  }
+
+  function detectSport(text, home = '', away = '') {
     const t = norm(text);
-    if (/\b(tennis|quan vot|atp|wta|itf|challenger|wimbledon|roland garros|us open|australian open|set \d)\b/.test(t)) return 'Tennis';
-    if (/\b(nba|ncaa|wnba|cba|euroleague|bong ro|basketball|quarter)\b/.test(t)) return 'Bóng rổ';
-    if (/\b(volleyball|bong chuyen|vnl|cev)\b/.test(t)) return 'Bóng chuyền';
+    if (/\b(tennis|quan vot|atp|wta|itf|challenger|wimbledon|roland garros|us open|australian open|set \d|game)\b/.test(t)) return 'Tennis';
     if (/\b(table tennis|ping pong|bong ban|ittf|wtt|setka|tt cup)\b/.test(t)) return 'Bóng bàn';
     if (/\b(badminton|cau long|bwf)\b/.test(t)) return 'Cầu lông';
+    if (/\b(nba|ncaa|wnba|cba|euroleague|bong ro|basketball|quarter)\b/.test(t)) return 'Bóng rổ';
+    if (/\b(volleyball|bong chuyen|vnl|cev)\b/.test(t)) return 'Bóng chuyền';
     if (/\b(nhl|khl|hockey|khuc con cau|puck)\b/.test(t)) return 'Khúc côn cầu';
     if (/\b(nfl|ncaaf|bong bau duc|touchdown)\b/.test(t)) return 'Bóng bầu dục';
     if (/\b(mlb|npb|kbo|baseball|bong chay|inning)\b/.test(t)) return 'Bóng chày';
     if (/\b(ufc|mma|boxing|quyen anh|bellator|one championship)\b/.test(t)) return 'MMA / Võ thuật';
     if (/\b(esports|lol|league of legends|dota|cs2|csgo|valorant|lck|lpl|esoccer|e soccer)\b/.test(t)) return 'Esports';
+
+    // Smart heuristic: Over/Under line 15.5–42.5 without corners/cards + 2 person names => Tennis
+    const ouMatch = text.match(/(?:tài|xỉu|trên|dưới|over|under)\s*[+-]?\s*(\d{1,3}(?:\.\d+)?)/i);
+    const ouVal = ouMatch ? parseFloat(ouMatch[1]) : NaN;
+    const isCornerOrCard = /corner|phạt góc|thẻ|card/i.test(text);
+    if (!isCornerOrCard && !isNaN(ouVal) && ouVal >= 15.5 && ouVal <= 42.5 && looksLikePersonPair(home, away)) {
+      return 'Tennis';
+    }
+
     return 'Bóng đá';
+  }
+
+  /* Auto-fix existing saved matches that were misclassified as Football */
+  function migrateExistingMatches() {
+    let changed = false;
+    db.matches.forEach(m => {
+      if (m.sport === 'Bóng đá' && !m.league && looksLikePersonPair(m.home, m.away)) {
+        // Check linked ticket pick for Tennis game totals (15.5 - 42.5)
+        const linkedPick = db.tickets
+          .flatMap(t => t.entries)
+          .find(e => matchKey(e) === matchKey(m));
+        const contextStr = linkedPick ? `${linkedPick.market} ${linkedPick.pick}` : '';
+        if (detectSport(contextStr, m.home, m.away) === 'Tennis') {
+          m.sport = 'Tennis';
+          if (linkedPick) linkedPick.sport = 'Tennis';
+          changed = true;
+        }
+      }
+    });
+    if (changed) localStorage.setItem(KEY, JSON.stringify(db));
   }
 
   function cleanParticipantName(str) {
@@ -752,7 +793,7 @@ tr:last-child td{border:0}
       const nextLines = lines.slice(i, Math.min(i + 8, lines.length));
       const fullContext = [...prevLines, ...nextLines].join(' ');
       const { status, score } = detectStatusAndScore(nextLines.join(' '));
-      const sport = detectSport(fullContext);
+      const sport = detectSport(fullContext, pair.home, pair.away);
 
       const market = /corner|phạt góc/i.test(fullContext) ? 'Phạt góc'
         : /hiệp\s*1|\b1h\b|\bht\b/i.test(fullContext) ? 'Hiệp 1'
@@ -1017,7 +1058,7 @@ tr:last-child td{border:0}
       id: uid(),
       home,
       away,
-      sport: $('#sport').value || 'Bóng đá',
+      sport: $('#sport').value || 'Tennis',
       league: $('#league').value.trim(),
       time: '',
       status: 'scheduled',
@@ -1032,7 +1073,7 @@ tr:last-child td{border:0}
     syncLivescore(false);
   }
 
-  /* Smart Multi-Source Auto Livescore Engine */
+  /* Smart Multi-Source Auto Livescore Engine (365Scores + ESPN + TheSportsDB) */
   const NOISE_WORDS = new Set(['fc', 'cf', 'sc', 'ac', 'fk', 'sk', 'afc', 'bc', 'club', 'team', 'united', 'city', 'real', 'sporting', 'atletico', 'deportivo', 'cd', 'ca', 'as', 'us', 'ss', 'vfb', 'tsg', 'rb', 'ik', 'bk', 'if']);
 
   function significantTokens(name) {
@@ -1051,10 +1092,10 @@ tr:last-child td{border:0}
     const ta = a.split(' ').filter(Boolean);
     const tb = b.split(' ').filter(Boolean);
 
-    // Tennis surname match ("Uchida, Kaichi" / "K. Uchida" vs "Kaichi Uchida")
+    // Match Tennis surnames ("Max Alcala Gurri" vs "M. Alcala Gurri" or "Alcala Gurri, Max")
     const surnameA = userInput.includes(',') ? ta[0] : ta[ta.length - 1];
     const surnameB = apiName.includes(',') ? tb[0] : tb[tb.length - 1];
-    if (surnameA && surnameB && surnameA.length >= 4 && surnameA === surnameB) {
+    if (surnameA && surnameB && surnameA.length >= 5 && surnameA === surnameB) {
       return true;
     }
 
@@ -1074,11 +1115,91 @@ tr:last-child td{border:0}
       const y = d.getFullYear();
       const m = String(d.getMonth() + 1).padStart(2, '0');
       const day = String(d.getDate()).padStart(2, '0');
-      return { compact: `${y}${m}${day}`, iso: `${y}-${m}-${day}` };
+      return { compact: `${y}${m}${day}`, iso: `${y}-${m}-${day}`, slash: `${day}/${m}/${y}` };
     };
     return [fmt(yesterday), fmt(now)];
   }
 
+  /* Source 1: 365Scores Web API (Covers ATP Challenger, ITF, Table Tennis, Minor Leagues & All Major Sports) */
+  async function fetch365ScoresFeeds(dates) {
+    const sports = [
+      { id: 3, label: 'Tennis' },
+      { id: 1, label: 'Bóng đá' },
+      { id: 2, label: 'Bóng rổ' },
+      { id: 11, label: 'Bóng bàn' },
+      { id: 5, label: 'Bóng chuyền' },
+      { id: 12, label: 'Cầu lông' },
+      { id: 4, label: 'Khúc côn cầu' },
+      { id: 8, label: 'Bóng bầu dục' },
+      { id: 7, label: 'Bóng chày' },
+      { id: 14, label: 'Esports' }
+    ];
+
+    const urls = [];
+    // Active / live / today allscores per sport
+    sports.forEach(s => {
+      urls.push({
+        sportId: s.id,
+        label: s.label,
+        url: `https://webws.365scores.com/web/games/allscores/?appTypeId=5&langId=1&timezoneName=Asia/Ho_Chi_Minh&sportId=${s.id}`
+      });
+      // Also query yesterday's finished matches for overnight fixtures
+      urls.push({
+        sportId: s.id,
+        label: s.label,
+        url: `https://webws.365scores.com/web/games/results/?appTypeId=5&langId=1&timezoneName=Asia/Ho_Chi_Minh&sportId=${s.id}&startDate=${dates[0].slash}&endDate=${dates[1].slash}`
+      });
+    });
+
+    const results = [];
+    const responses = await Promise.allSettled(
+      urls.map(u => fetch(u.url).then(r => (r.ok ? r.json() : null)).then(data => ({ ...u, data })))
+    );
+
+    responses.forEach(res => {
+      if (res.status !== 'fulfilled' || !Array.isArray(res.value?.data?.games)) return;
+      const { sportId, label, data } = res.value;
+      const compMap = new Map((data.competitions || []).map(c => [c.id, c.name]));
+
+      data.games.forEach(g => {
+        const hc = g.homeCompetitor;
+        const ac = g.awayCompetitor;
+        if (!hc?.name || !ac?.name) return;
+
+        // statusGroup: 2 = scheduled, 3 = live, 4 = finished
+        const status = g.statusGroup === 3 ? 'live' : g.statusGroup === 4 ? 'finished' : 'scheduled';
+
+        let score = '';
+        if (sportId === 3 || sportId === 11 || sportId === 5 || sportId === 12) {
+          // Extract set-by-set scores if available
+          const setStages = Array.isArray(g.stages)
+            ? g.stages.filter(st => /set/i.test(st.name || '') && st.homeCompetitorScore >= 0 && st.awayCompetitorScore >= 0)
+            : [];
+          if (setStages.length) {
+            score = setStages.map(st => `${st.homeCompetitorScore}-${st.awayCompetitorScore}`).join(', ');
+          } else if (hc.score >= 0 && ac.score >= 0) {
+            score = `${hc.score}-${ac.score}`;
+          }
+        } else if (hc.score >= 0 && ac.score >= 0) {
+          score = `${hc.score}-${ac.score}`;
+        }
+
+        results.push({
+          home: hc.name,
+          away: ac.name,
+          sport: label,
+          league: g.competitionDisplayName || compMap.get(g.competitionId) || '',
+          score,
+          status,
+          detail: g.statusText || ''
+        });
+      });
+    });
+
+    return results;
+  }
+
+  /* Source 2: ESPN Scoreboards */
   function extractEspnCompetitorName(c) {
     return c?.team?.displayName
       || c?.team?.shortDisplayName
@@ -1190,6 +1311,7 @@ tr:last-child td{border:0}
     return results;
   }
 
+  /* Source 3: TheSportsDB */
   async function fetchSportsDbFeeds(dates) {
     const sportsMap = [
       { api: 'Soccer', label: 'Bóng đá' },
@@ -1269,6 +1391,7 @@ tr:last-child td{border:0}
     try {
       const dates = getDateStrings();
       const tasks = [
+        fetch365ScoresFeeds(dates),
         fetchEspnFeeds(dates),
         fetchSportsDbFeeds(dates)
       ];
@@ -1287,10 +1410,15 @@ tr:last-child td{border:0}
 
       let updated = 0;
       db.matches.forEach(m => {
-        const hit = liveFeed.find(f =>
+        // Prefer matches that are live or finished over scheduled duplicates
+        const candidates = liveFeed.filter(f =>
           (isSameParticipant(m.home, f.home) && isSameParticipant(m.away, f.away)) ||
           (isSameParticipant(m.home, f.away) && isSameParticipant(m.away, f.home))
         );
+        const hit = candidates.find(c => c.status === 'live')
+          || candidates.find(c => c.status === 'finished')
+          || candidates[0];
+
         if (hit) {
           const prevScore = m.score;
           const prevStatus = m.status;
@@ -1298,8 +1426,8 @@ tr:last-child td{border:0}
           if (hit.status) m.status = hit.status;
           if (hit.score && hit.status !== 'scheduled') m.score = hit.score;
           if (hit.detail) m.time = hit.detail;
-          if (hit.league && !m.league) m.league = hit.league;
-          if (hit.sport && (!m.sport || m.sport === 'Bóng đá')) m.sport = hit.sport;
+          if (hit.league) m.league = hit.league;
+          if (hit.sport) m.sport = hit.sport;
 
           if (m.score !== prevScore || m.status !== prevStatus) updated++;
         }
@@ -1425,7 +1553,7 @@ tr:last-child td{border:0}
       if (!m) return;
       m.home = $('#editHome').value.trim() || m.home;
       m.away = $('#editAway').value.trim() || m.away;
-      m.sport = $('#editSport').value || 'Bóng đá';
+      m.sport = $('#editSport').value || 'Tennis';
       m.status = $('#editStatus').value;
       m.score = $('#editScore').value.trim();
       persist();
@@ -1460,6 +1588,7 @@ tr:last-child td{border:0}
           const d = JSON.parse(r.result);
           if (!Array.isArray(d.tickets) || !Array.isArray(d.matches)) throw 0;
           db = { ...db, ...d };
+          migrateExistingMatches();
           persist();
           say('Đã nhập dữ liệu. Đang đồng bộ tỷ số...');
           syncLivescore(false);
@@ -1489,6 +1618,7 @@ tr:last-child td{border:0}
     };
   }
 
+  migrateExistingMatches();
   bind();
   render();
   setupAutoSync();
